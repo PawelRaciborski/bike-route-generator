@@ -5335,7 +5335,7 @@ class _HomePageState extends State<HomePage> {
     final Map<String, dynamic> dict = jsonDecode(json);
     final List<dynamic> coords = dict['coordinates'];
 
-    var list = coords.map((e) => Coords(e[1],e[0])).toList(growable: false);
+    var list = coords.map((e) => Coords(e[1], e[0])).toList(growable: false);
     return list;
   }
 
@@ -5345,33 +5345,24 @@ class _HomePageState extends State<HomePage> {
 
     final coords = _getCoords();
 
-    final minimized = [
-      coords[0],
-      coords[100],
-      coords[200],
-      coords[300],
-      coords[400],
-      coords[500],
-      coords[600],
-      coords[700],
-      coords[800],
-      coords[900],
-      coords[1000],
-      coords[1200],
-      coords[1323],
-    ];
+    final step = 100;
+
+    final minimized = List<Coords>.generate(
+        (coords.length / step).floor(), (index) => coords[index * step]);
+
+    minimized.add(coords.last);
 
     await maps
         .firstWhere((element) => element.mapType == MapType.google)
         .showDirections(
-      destination: Coords(53.1496072, 23.0445973),
-      waypoints: minimized,
-    );
+          origin: minimized.first,
+          destination: minimized.last,
+          waypoints: minimized.sublist(1, minimized.length - 2),
+        );
   }
 
   @override
   Widget build(BuildContext context) {
-
     _getCoords();
 
     return Scaffold(
