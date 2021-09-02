@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:bike_route_generator/ors/ors_api.dart';
 import 'package:bike_route_generator/home/configuration_view.dart';
 import 'package:flutter/material.dart';
 import 'package:map_launcher/map_launcher.dart';
@@ -33,6 +34,9 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   List<Coords> _getCoords() {
+
+    OrsApi(apiKey: "",);
+
     final json = '''{
   "coordinates": [
     [
