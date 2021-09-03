@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:bike_route_generator/home/configuration_view.dart';
 import 'package:flutter/material.dart';
 import 'package:map_launcher/map_launcher.dart';
 
@@ -16,7 +17,7 @@ class RouteGeneratorApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: HomePage(title: 'Bike route generator'),
+      home: ConfigurationView(),//HomePage(title: 'Bike route generator'),
     );
   }
 }
