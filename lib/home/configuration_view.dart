@@ -9,70 +9,75 @@ class ConfigurationView extends StatefulWidget {
 }
 
 class _ConfigurationViewState extends State<ConfigurationView> {
-  int _originLocationSelection = 0;
+  bool _originLocationSelection = false;
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-      appBar: AppBar(
-        title: Text("Bike Route Generator"),
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                _buildOriginOptionSelector(),
-                _buildCustomLocationInput(),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                    //TODO: add API call trigger
-                    },
-                    child: Text("Generate!"),
-                  ),
-                ),
-              ],
-            )),
-      ));
+  Widget build(BuildContext context) =>
+      Scaffold(
+          appBar: AppBar(
+            title: Text("Bike Route Generator"),
+          ),
+          body: SingleChildScrollView(
+            child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    _buildOriginOptionSelector(),
+                    _buildCustomLocationInput(),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          //TODO: add API call trigger
+                        },
+                        child: Text("Generate!"),
+                      ),
+                    ),
+                  ],
+                )),
+          ));
 
-  Widget _buildOriginOptionSelector() => Column(
+  Widget _buildOriginOptionSelector() =>
+      Column(
         children: [
           Text("Select route origin:"),
-          RadioListTile<int>(
-            value: 0,
+          RadioListTile<bool>(
+            value: false,
             groupValue: _originLocationSelection,
             title: Text("Current Location"),
             onChanged: (value) {
               setState(() {
-                _originLocationSelection = value ?? 0;
+                _originLocationSelection = value ?? false;
               });
             },
           ),
-          RadioListTile<int>(
-            value: 1,
+          RadioListTile<bool>(
+            value: true,
             groupValue: _originLocationSelection,
             title: Text("Custom Location"),
             onChanged: (value) {
               setState(() {
-                _originLocationSelection = value ?? 0;
+                _originLocationSelection = value ?? false;
               });
             },
           ),
         ],
       );
 
-  Widget _buildCustomLocationInput() => Column(
+  Widget _buildCustomLocationInput() =>
+      Column(
         children: [
           RegExpTextField(
             RegExp(r'^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?)$'),
             keyboardType: TextInputType.number,
             labelText: 'Latitude',
+            enabled: _originLocationSelection,
           ),
           RegExpTextField(
             RegExp(r'^\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$'),
             keyboardType: TextInputType.number,
             labelText: 'Longitude',
+            enabled: _originLocationSelection,
           ),
         ],
       );
