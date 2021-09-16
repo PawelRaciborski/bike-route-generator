@@ -6,12 +6,14 @@ class RegExpTextField extends StatefulWidget {
   final String? labelText;
   final TextInputType? keyboardType;
   final bool enabled;
+  final Function(bool, String)? onChange;
 
   const RegExpTextField(
     this.regExp, {
     this.labelText,
     this.keyboardType,
     this.enabled = true,
+    this.onChange,
     Key? key,
   }) : super(key: key);
 
@@ -30,6 +32,7 @@ class RegExpTextFieldState extends State<RegExpTextField> {
       setState(() {
         _isValid = _validateInput();
       });
+      widget.onChange!(_isValid, _textController.text);
     });
   }
 
