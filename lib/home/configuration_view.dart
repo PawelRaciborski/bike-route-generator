@@ -18,11 +18,20 @@ class _ConfigurationViewState extends State<ConfigurationView> {
       ),
       body: SingleChildScrollView(
         child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16.0),
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
                 _buildOriginOptionSelector(),
                 _buildCustomLocationInput(),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                    //TODO: add API call trigger
+                    },
+                    child: Text("Generate!"),
+                  ),
+                ),
               ],
             )),
       ));
