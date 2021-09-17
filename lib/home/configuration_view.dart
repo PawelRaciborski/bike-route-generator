@@ -1,5 +1,7 @@
+import 'package:bike_route_generator/ors/ors_api.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:map_launcher/map_launcher.dart';
 
 import 'reg_exp_text_field.dart';
 
@@ -26,11 +28,7 @@ class _ConfigurationViewState extends State<ConfigurationView> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _isInputValid
-                        ? () {
-                            //TODO: add API call trigger
-                          }
-                        : null,
+                    onPressed: _confirmButtonOnPressed,
                     child: Text("Generate!"),
                   ),
                 ),
@@ -38,8 +36,32 @@ class _ConfigurationViewState extends State<ConfigurationView> {
             )),
       ));
 
-  bool get _isInputValid {
-    return !_originLocationSelection || (_latitude!= null && _longitude != null);
+  bool get _isInputValid =>
+      !_originLocationSelection || (_latitude != null && _longitude != null);
+
+  Function()? get _confirmButtonOnPressed => _isInputValid
+      ? () {
+          _generateRoute();
+        }
+      : null;
+
+  void _generateRoute() async {
+    final api = const OrsApi(apiKey: "");
+    final maps = await MapLauncher.installedMaps;
+    AvailableMap map;
+    try {
+      map = maps.firstWhere(
+        (element) => element.mapType == MapType.google,
+      );
+    } on Error catch (error) {
+      // TODO display no google maps error message
+      return;
+    }
+    api.generateRoute().then((value) => map.showDirections(
+          // origin: value.first,
+          destination: value.last,
+          waypoints: value.sublist(1, value.length - 2),
+        ));
   }
 
   Widget _buildOriginOptionSelector() => Column(
