@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:map_launcher/map_launcher.dart';
 import 'package:http/http.dart' as http;
+import 'package:map_launcher/map_launcher.dart';
 
 class OrsApi {
   static const String baseUrl =
@@ -11,22 +11,23 @@ class OrsApi {
 
   const OrsApi({required this.apiKey});
 
-  Future<List<Coords>> generateRoute() async {
-    final String response = await _callBackend();
+  Future<List<Coords>> generateRoute(Coords origin) async {
+    final String response = await _callBackend(origin);
 
     final coordsList = _extractCoordsFromResponse(response);
 
     final step = 100;
 
     final minimizedCoordsList = List<Coords>.generate(
-        (coordsList.length / step).floor(), (index) => coordsList[index * step]);
+        (coordsList.length / step).floor(),
+        (index) => coordsList[index * step]);
 
     minimizedCoordsList.add(coordsList.last);
 
     return minimizedCoordsList;
   }
 
-  Future<String> _callBackend() async {
+  Future<String> _callBackend(Coords origin) async {
     final headers = {
       'Content-Type': 'application/json; charset=utf-8',
       'Accept':
@@ -37,8 +38,7 @@ class OrsApi {
     var response = await http.post(
       Uri.parse(baseUrl),
       headers: headers,
-      body:
-          '{"coordinates":[[8.681495,49.41461]],"options":{"round_trip":{"length":10000,"points":5,"seed":123}}}',
+      body: _RequestBody(origin).toJsonString(),
     );
 
     return response.body;
@@ -50,5 +50,36 @@ class OrsApi {
         responseJson['features'][0]['geometry']['coordinates'];
     final list = coords.map((e) => Coords(e[1], e[0])).toList(growable: false);
     return list;
+  }
+}
+
+class _RequestBody {
+  final Coords origin;
+  final int length;
+  final int points;
+  final int seed;
+
+  _RequestBody(
+    this.origin, {
+    this.length = 10,
+    this.points = 5,
+    this.seed = 123,
+  });
+
+  String toJsonString() {
+    return '''
+    {
+    	"coordinates": [
+    		[${origin.longitude},${origin.latitude}]
+    	],
+    	"options": {
+    		"round_trip": {
+    			"length": ${length * 1000},
+    			"points": $points,
+    			"seed": $seed
+    		}
+    	}
+    }
+    ''';
   }
 }

@@ -3,6 +3,7 @@ import 'package:bike_route_generator/secrets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:map_launcher/map_launcher.dart';
+import 'package:geolocator/geolocator.dart';
 
 import 'reg_exp_text_field.dart';
 
@@ -12,7 +13,8 @@ class ConfigurationView extends StatefulWidget {
 }
 
 class _ConfigurationViewState extends State<ConfigurationView> {
-  bool _originLocationSelection = false;
+  static final api = const OrsApi(apiKey: orsApiKey);
+  bool _useCustomLocation = false;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -38,7 +40,7 @@ class _ConfigurationViewState extends State<ConfigurationView> {
       ));
 
   bool get _isInputValid =>
-      !_originLocationSelection || (_latitude != null && _longitude != null);
+      !_useCustomLocation || (_latitude != null && _longitude != null);
 
   Function()? get _confirmButtonOnPressed => _isInputValid
       ? () {
@@ -47,7 +49,15 @@ class _ConfigurationViewState extends State<ConfigurationView> {
       : null;
 
   void _generateRoute() async {
-    final api = const OrsApi(apiKey: orsApiKey);
+    Coords originLocation;
+
+    if (!_useCustomLocation) {
+      originLocation = await _determinePosition()
+          .then((value) => Coords(value.latitude, value.longitude));
+    } else {
+      originLocation = Coords(_latitude!, _longitude!);
+    }
+
     final maps = await MapLauncher.installedMaps;
     AvailableMap map;
     try {
@@ -58,8 +68,8 @@ class _ConfigurationViewState extends State<ConfigurationView> {
       // TODO display no google maps error message
       return;
     }
-    api.generateRoute().then((value) => map.showDirections(
-          // origin: value.first,
+    api.generateRoute(originLocation).then((value) => map.showDirections(
+          origin: value.first,
           destination: value.last,
           waypoints: value.sublist(1, value.length - 2),
         ));
@@ -70,21 +80,21 @@ class _ConfigurationViewState extends State<ConfigurationView> {
           Text("Select route origin:"),
           RadioListTile<bool>(
             value: false,
-            groupValue: _originLocationSelection,
+            groupValue: _useCustomLocation,
             title: Text("Current Location"),
             onChanged: (value) {
               setState(() {
-                _originLocationSelection = value ?? false;
+                _useCustomLocation = value ?? false;
               });
             },
           ),
           RadioListTile<bool>(
             value: true,
-            groupValue: _originLocationSelection,
+            groupValue: _useCustomLocation,
             title: Text("Custom Location"),
             onChanged: (value) {
               setState(() {
-                _originLocationSelection = value ?? false;
+                _useCustomLocation = value ?? false;
               });
             },
           ),
@@ -100,7 +110,7 @@ class _ConfigurationViewState extends State<ConfigurationView> {
             RegExp(r'^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?)$'),
             keyboardType: TextInputType.number,
             labelText: 'Latitude',
-            enabled: _originLocationSelection,
+            enabled: _useCustomLocation,
             onChange: (isValid, value) {
               setState(() {
                 _latitude = isValid ? double.parse(value) : null;
@@ -111,7 +121,7 @@ class _ConfigurationViewState extends State<ConfigurationView> {
             RegExp(r'^\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$'),
             keyboardType: TextInputType.number,
             labelText: 'Longitude',
-            enabled: _originLocationSelection,
+            enabled: _useCustomLocation,
             onChange: (isValid, value) {
               setState(() {
                 _longitude = isValid ? double.parse(value) : null;
@@ -120,4 +130,29 @@ class _ConfigurationViewState extends State<ConfigurationView> {
           ),
         ],
       );
+
+  Future<Position> _determinePosition() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      return Future.error('Location services are disabled.');
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return Future.error('Location permissions are denied');
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      return Future.error(
+          'Location permissions are permanently denied, we cannot request permissions.');
+    }
+
+    return await Geolocator.getCurrentPosition();
+  }
 }
