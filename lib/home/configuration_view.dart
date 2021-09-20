@@ -1,4 +1,5 @@
 import 'package:bike_route_generator/ors/ors_api.dart';
+import 'package:bike_route_generator/secrets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:map_launcher/map_launcher.dart';
@@ -46,7 +47,7 @@ class _ConfigurationViewState extends State<ConfigurationView> {
       : null;
 
   void _generateRoute() async {
-    final api = const OrsApi(apiKey: "");
+    final api = const OrsApi(apiKey: orsApiKey);
     final maps = await MapLauncher.installedMaps;
     AvailableMap map;
     try {
