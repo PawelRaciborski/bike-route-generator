@@ -11,23 +11,43 @@ class OrsApi {
 
   const OrsApi({required this.apiKey});
 
-  Future<List<Coords>> generateRoute(Coords origin) async {
-    final String response = await _callBackend(origin);
+  Future<List<Coords>> generateRoute(
+    Coords origin,
+    int length,
+    int seed,
+    int points,
+  ) async {
+    final String? response = await _callBackend(
+      _RequestBody(
+        origin,
+        length: length,
+        seed: seed,
+        points: points,
+      ),
+    );
 
     final coordsList = _extractCoordsFromResponse(response);
 
-    final step = 100;
+    //TODO: proper error handling
+
+    List<Coords> minimizedCoordsList = minimizeCoordsList(coordsList);
+
+    return minimizedCoordsList;
+  }
+
+  List<Coords> minimizeCoordsList(List<Coords> coordsList) {
+    // Steps count equal with stops counts handled by google maps
+    final step = (coordsList.length / 10).floor();
 
     final minimizedCoordsList = List<Coords>.generate(
         (coordsList.length / step).floor(),
         (index) => coordsList[index * step]);
 
     minimizedCoordsList.add(coordsList.last);
-
     return minimizedCoordsList;
   }
 
-  Future<String> _callBackend(Coords origin) async {
+  Future<String> _callBackend(_RequestBody requestBody) async {
     final headers = {
       'Content-Type': 'application/json; charset=utf-8',
       'Accept':
@@ -38,13 +58,16 @@ class OrsApi {
     var response = await http.post(
       Uri.parse(baseUrl),
       headers: headers,
-      body: _RequestBody(origin).toJsonString(),
+      body: requestBody.toJsonString(),
     );
 
     return response.body;
   }
 
-  List<Coords> _extractCoordsFromResponse(String response) {
+  List<Coords> _extractCoordsFromResponse(String? response) {
+    if (response == null) {
+      return [];
+    }
     final responseJson = jsonDecode(response);
     final List<dynamic> coords =
         responseJson['features'][0]['geometry']['coordinates'];

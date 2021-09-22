@@ -2,8 +2,9 @@ import 'package:bike_route_generator/ors/ors_api.dart';
 import 'package:bike_route_generator/secrets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:map_launcher/map_launcher.dart';
+import 'package:flutter_spinbox/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:map_launcher/map_launcher.dart';
 
 import 'reg_exp_text_field.dart';
 
@@ -17,27 +18,33 @@ class _ConfigurationViewState extends State<ConfigurationView> {
   bool _useCustomLocation = false;
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-      appBar: AppBar(
-        title: Text("Bike Route Generator"),
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                _buildOriginOptionSelector(),
-                _buildCustomLocationInput(),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _confirmButtonOnPressed,
-                    child: Text("Generate!"),
-                  ),
-                ),
-              ],
-            )),
-      ));
+  Widget build(BuildContext context) {
+    List<Widget> mainViewChildren = [_buildOriginOptionSelector()];
+    if (_useCustomLocation) {
+      mainViewChildren.add(_buildCustomLocationInput());
+    }
+    mainViewChildren
+      ..add(SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: _confirmButtonOnPressed,
+          child: Text("Generate!"),
+        ),
+      ))
+      ..add(_buildRoundTripDetailsInput());
+
+    return Scaffold(
+        appBar: AppBar(
+          title: Text("Bike Route Generator"),
+        ),
+        body: SingleChildScrollView(
+          child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: mainViewChildren,
+              )),
+        ));
+  }
 
   bool get _isInputValid =>
       !_useCustomLocation || (_latitude != null && _longitude != null);
@@ -59,7 +66,9 @@ class _ConfigurationViewState extends State<ConfigurationView> {
     }
 
     final maps = await MapLauncher.installedMaps;
+
     AvailableMap map;
+
     try {
       map = maps.firstWhere(
         (element) => element.mapType == MapType.google,
@@ -68,11 +77,14 @@ class _ConfigurationViewState extends State<ConfigurationView> {
       // TODO display no google maps error message
       return;
     }
-    api.generateRoute(originLocation).then((value) => map.showDirections(
-          origin: value.first,
-          destination: value.last,
-          waypoints: value.sublist(1, value.length - 2),
-        ));
+
+    api
+        .generateRoute(originLocation, _length, _seed, _points)
+        .then((value) => map.showDirections(
+              origin: value.first,
+              destination: value.last,
+              waypoints: value.sublist(1, value.length - 1),
+            ));
   }
 
   Widget _buildOriginOptionSelector() => Column(
@@ -130,6 +142,39 @@ class _ConfigurationViewState extends State<ConfigurationView> {
           ),
         ],
       );
+
+  int _length = 10;
+  int _seed = 123;
+  int _points = 5;
+
+  Widget _buildRoundTripDetailsInput() {
+    return Column(
+      children: [
+        Text('Roundtrip config'),
+        SpinBox(
+          min: 1,
+          max: 1000,
+          value: _length.toDouble(),
+          decoration: InputDecoration(labelText: "Distance [km]"),
+          onChanged: (value) => _length = value.toInt(),
+        ),
+        SpinBox(
+          min: 1,
+          max: 1023,
+          value: _seed.toDouble(),
+          decoration: InputDecoration(labelText: "Seed"),
+          onChanged: (value) => _seed = value.toInt(),
+        ),
+        SpinBox(
+          min: 3,
+          max: 10,
+          value: _points.toDouble(),
+          decoration: InputDecoration(labelText: "Points"),
+          onChanged: (value) => _points = value.toInt(),
+        ),
+      ],
+    );
+  }
 
   Future<Position> _determinePosition() async {
     bool serviceEnabled;
