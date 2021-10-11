@@ -5,7 +5,7 @@ import 'package:map_launcher/map_launcher.dart';
 
 class OrsApi {
   static const String baseUrl =
-      "https://api.openrouteservice.org/v2/directions/driving-car/geojson";
+      "https://api.openrouteservice.org/v2/directions/cycling-regular/geojson";
 
   final String apiKey;
 
