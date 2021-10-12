@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:bike_route_generator/ors/ors_api.dart';
 import 'package:bike_route_generator/secrets.dart';
 import 'package:flutter/material.dart';
@@ -79,7 +81,7 @@ class _ConfigurationViewState extends State<ConfigurationView> {
     }
 
     api
-        .generateRoute(originLocation, _length, _seed, _points)
+        .generateRoute(originLocation, _length, _safeSeed, _points)
         .then((value) => map.showDirections(
               origin: value.first,
               destination: value.last,
@@ -143,8 +145,21 @@ class _ConfigurationViewState extends State<ConfigurationView> {
         ],
       );
 
-  int _length = 10;
-  int _seed = 123;
+  int _length = 20;
+  int? _seed;
+
+  int get _safeSeed {
+    if (_seed == null) {
+      _seed = generateNextSeed();
+    }
+    return _seed ?? 0;
+  }
+  final random = new Random();
+
+  int generateNextSeed() {
+
+    return random.nextInt(1000);
+  }
   int _points = 5;
 
   Widget _buildRoundTripDetailsInput() {
@@ -158,12 +173,32 @@ class _ConfigurationViewState extends State<ConfigurationView> {
           decoration: InputDecoration(labelText: "Distance [km]"),
           onChanged: (value) => _length = value.toInt(),
         ),
-        SpinBox(
-          min: 1,
-          max: 1023,
-          value: _seed.toDouble(),
-          decoration: InputDecoration(labelText: "Seed"),
-          onChanged: (value) => _seed = value.toInt(),
+        Row(
+          mainAxisSize: MainAxisSize.max,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              flex: 6,
+              child: SpinBox(
+                min: 1,
+                max: 1023,
+                value: _safeSeed.toDouble() ,
+                decoration: InputDecoration(labelText: "Seed"),
+                onChanged: (value) => _seed = value.toInt(),
+              ),
+            ),
+            Expanded(
+              flex: 1,
+              child: IconButton(
+                icon: Icon(Icons.refresh),
+                onPressed: () {
+                  setState(() {
+                    _seed = generateNextSeed();
+                  });
+                },
+              ),
+            )
+          ],
         ),
         SpinBox(
           min: 3,
