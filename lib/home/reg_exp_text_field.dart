@@ -48,4 +48,10 @@ class RegExpTextFieldState extends State<RegExpTextField> {
       );
 
   bool _validateInput() => widget.regExp.hasMatch(_textController.text);
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
+  }
 }
