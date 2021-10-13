@@ -130,27 +130,33 @@ class _ConfigurationViewState extends State<ConfigurationView> {
 
   Widget _buildCustomLocationInput() => Column(
         children: [
-          RegExpTextField(
-            RegExp(r'^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?)$'),
-            keyboardType: TextInputType.number,
-            labelText: 'Latitude',
-            enabled: _useCustomLocation,
-            onChange: (isValid, value) {
-              setState(() {
-                _latitude = isValid ? double.parse(value) : null;
-              });
-            },
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4.0),
+            child: RegExpTextField(
+              RegExp(r'^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?)$'),
+              keyboardType: TextInputType.number,
+              labelText: 'Latitude',
+              enabled: _useCustomLocation,
+              onChange: (isValid, value) {
+                setState(() {
+                  _latitude = isValid ? double.parse(value) : null;
+                });
+              },
+            ),
           ),
-          RegExpTextField(
-            RegExp(r'^\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$'),
-            keyboardType: TextInputType.number,
-            labelText: 'Longitude',
-            enabled: _useCustomLocation,
-            onChange: (isValid, value) {
-              setState(() {
-                _longitude = isValid ? double.parse(value) : null;
-              });
-            },
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4.0),
+            child: RegExpTextField(
+              RegExp(r'^\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$'),
+              keyboardType: TextInputType.number,
+              labelText: 'Longitude',
+              enabled: _useCustomLocation,
+              onChange: (isValid, value) {
+                setState(() {
+                  _longitude = isValid ? double.parse(value) : null;
+                });
+              },
+            ),
           ),
         ],
       );
