@@ -22,9 +22,19 @@ class _ConfigurationViewState extends State<ConfigurationView> {
   @override
   Widget build(BuildContext context) {
     List<Widget> mainViewChildren = [_buildOriginOptionSelector()];
-    if (_useCustomLocation) {
-      mainViewChildren.add(_buildCustomLocationInput());
-    }
+
+    mainViewChildren.add(
+      AnimatedCrossFade(
+        duration: const Duration(milliseconds: 150),
+        firstChild: _buildCustomLocationInput(),
+        secondChild: Container(),
+        // Second child just to made coords input disappear
+        crossFadeState: _useCustomLocation
+            ? CrossFadeState.showFirst
+            : CrossFadeState.showSecond,
+      ),
+    );
+
     mainViewChildren
       ..add(SizedBox(
         width: double.infinity,
@@ -154,12 +164,11 @@ class _ConfigurationViewState extends State<ConfigurationView> {
     }
     return _seed ?? 0;
   }
+
   final random = new Random();
 
-  int generateNextSeed() {
+  int generateNextSeed() => random.nextInt(1000);
 
-    return random.nextInt(1000);
-  }
   int _points = 5;
 
   Widget _buildRoundTripDetailsInput() {
@@ -182,7 +191,7 @@ class _ConfigurationViewState extends State<ConfigurationView> {
               child: SpinBox(
                 min: 1,
                 max: 1023,
-                value: _safeSeed.toDouble() ,
+                value: _safeSeed.toDouble(),
                 decoration: InputDecoration(labelText: "Seed"),
                 onChanged: (value) => _seed = value.toInt(),
               ),
