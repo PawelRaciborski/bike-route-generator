@@ -20,43 +20,36 @@ class _ConfigurationViewState extends State<ConfigurationView> {
   bool _useCustomLocation = false;
 
   @override
-  Widget build(BuildContext context) {
-    List<Widget> mainViewChildren = [_buildOriginOptionSelector()];
-
-    mainViewChildren.add(
-      AnimatedCrossFade(
-        duration: const Duration(milliseconds: 150),
-        firstChild: _buildCustomLocationInput(),
-        secondChild: Container(),
-        // Second child just to made coords input disappear
-        crossFadeState: _useCustomLocation
-            ? CrossFadeState.showFirst
-            : CrossFadeState.showSecond,
+  Widget build(BuildContext context) => Scaffold(
+      appBar: AppBar(
+        title: Text("Bike Route Generator"),
       ),
+      body: SingleChildScrollView(
+        child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                _buildOriginOptionSelector(),
+                AnimatedCrossFade(
+                  duration: const Duration(milliseconds: 150),
+                  firstChild: _buildCustomLocationInput(),
+                  secondChild: Container(),
+                  // Second child just to made coords input disappear
+                  crossFadeState: _useCustomLocation
+                      ? CrossFadeState.showFirst
+                      : CrossFadeState.showSecond,
+                ),
+                _buildRoundTripDetailsInput()
+              ],
+            )),
+      ),
+      floatingActionButton: _isInputValid
+          ? FloatingActionButton(
+              onPressed: _confirmButtonOnPressed,
+              child: Icon(Icons.directions_bike),
+            )
+          : null,
     );
-
-    mainViewChildren
-      ..add(SizedBox(
-        width: double.infinity,
-        child: ElevatedButton(
-          onPressed: _confirmButtonOnPressed,
-          child: Text("Generate!"),
-        ),
-      ))
-      ..add(_buildRoundTripDetailsInput());
-
-    return Scaffold(
-        appBar: AppBar(
-          title: Text("Bike Route Generator"),
-        ),
-        body: SingleChildScrollView(
-          child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: mainViewChildren,
-              )),
-        ));
-  }
 
   bool get _isInputValid =>
       !_useCustomLocation || (_latitude != null && _longitude != null);
@@ -205,7 +198,10 @@ class _ConfigurationViewState extends State<ConfigurationView> {
             Expanded(
               flex: 1,
               child: IconButton(
-                icon: Icon(Icons.refresh),
+                icon: Icon(
+                  Icons.casino_outlined,
+                  color: Theme.of(context).accentColor,
+                ),
                 onPressed: () {
                   setState(() {
                     _seed = generateNextSeed();
