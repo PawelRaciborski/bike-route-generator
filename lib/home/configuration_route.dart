@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:bike_route_generator/credits/credits_route.dart';
 import 'package:bike_route_generator/ors/ors_api.dart';
 import 'package:bike_route_generator/secrets.dart';
 import 'package:flutter/material.dart';
@@ -10,46 +11,57 @@ import 'package:map_launcher/map_launcher.dart';
 
 import 'reg_exp_text_field.dart';
 
-class ConfigurationView extends StatefulWidget {
+class ConfigurationRoute extends StatefulWidget {
   @override
-  State<StatefulWidget> createState() => _ConfigurationViewState();
+  State<StatefulWidget> createState() => _ConfigurationRouteState();
 }
 
-class _ConfigurationViewState extends State<ConfigurationView> {
+class _ConfigurationRouteState extends State<ConfigurationRoute> {
   static final api = const OrsApi(apiKey: orsApiKey);
   bool _useCustomLocation = false;
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      appBar: AppBar(
-        title: Text("Bike Route Generator"),
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                _buildOriginOptionSelector(),
-                AnimatedCrossFade(
-                  duration: const Duration(milliseconds: 150),
-                  firstChild: _buildCustomLocationInput(),
-                  secondChild: Container(),
-                  // Second child just to made coords input disappear
-                  crossFadeState: _useCustomLocation
-                      ? CrossFadeState.showFirst
-                      : CrossFadeState.showSecond,
-                ),
-                _buildRoundTripDetailsInput()
-              ],
-            )),
-      ),
-      floatingActionButton: _isInputValid
-          ? FloatingActionButton(
-              onPressed: _confirmButtonOnPressed,
-              child: Icon(Icons.directions_bike),
-            )
-          : null,
-    );
+        appBar: AppBar(
+          title: Text("Bike Route Generator"),
+          actions: [
+            IconButton(
+                onPressed: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CreditsRoute(),
+                      ));
+                },
+                icon: Icon(Icons.info_outline))
+          ],
+        ),
+        body: SingleChildScrollView(
+          child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  _buildOriginOptionSelector(),
+                  AnimatedCrossFade(
+                    duration: const Duration(milliseconds: 150),
+                    firstChild: _buildCustomLocationInput(),
+                    secondChild: Container(),
+                    // Second child just to made coords input disappear
+                    crossFadeState: _useCustomLocation
+                        ? CrossFadeState.showFirst
+                        : CrossFadeState.showSecond,
+                  ),
+                  _buildRoundTripDetailsInput()
+                ],
+              )),
+        ),
+        floatingActionButton: _isInputValid
+            ? FloatingActionButton(
+                onPressed: _confirmButtonOnPressed,
+                child: Icon(Icons.directions_bike),
+              )
+            : null,
+      );
 
   bool get _isInputValid =>
       !_useCustomLocation || (_latitude != null && _longitude != null);
