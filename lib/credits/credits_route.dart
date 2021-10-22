@@ -1,32 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-//TODO: Add ORS info
 class CreditsRoute extends StatelessWidget {
   CreditsRoute({Key? key}) : super(key: key);
 
-  final List<String> _libs = [
-    "url_launcher",
-    "map_launcher",
-    "http",
-    "geolocator",
-    "flutter_spinbox",
-  ];
+  final _libs = {
+    "url_launcher": "https://pub.dev/packages/url_launcher",
+    "map_launcher": "https://pub.dev/packages/map_launcher",
+    "http": "https://pub.dev/packages/http",
+    "geolocator": "https://pub.dev/packages/geolocator",
+    "flutter_spinbox": "https://pub.dev/packages/flutter_spinbox",
+    "Open Route Service": "https://openrouteservice.org/",
+  }.entries.toList();
 
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
           title: Text("Credits"),
         ),
-        body: ListView.builder(
-          itemCount: _libs.length,
-          itemBuilder: (context, index) => ListTile(
-            title: Text(_libs[index]),
-            onTap: () {
-              _launchURL("https://pub.dev/packages/${_libs[index]}");
-            },
-          ),
+        body: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8.0, 16.0, 8.0, 8.0),
+              child: Linkify(
+                options: LinkifyOptions(humanize: false),
+                text:
+                    '''This app utilizes libraries ans services listed below. Source code can be found at https://github.com/PawelRaciborski/bike-route-generator''',
+                onOpen: (link) => _launchURL(link.url),
+              ),
+            ),
+            Expanded(
+              child: ListView.builder(
+                itemCount: _libs.length,
+                itemBuilder: (context, index) {
+                  var entry = _libs[index];
+                  return ListTile(
+                    title: Text(entry.key),
+                    onTap: () {
+                      _launchURL(entry.value);
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       );
 
