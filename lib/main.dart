@@ -14,6 +14,15 @@ class RouteGeneratorApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.lime,
       ),
+      darkTheme: ThemeData(
+        primaryColor: Colors.lime,
+        accentColor: Colors.lime,
+        primaryColorDark: Colors.lime,
+        primaryColorLight: Colors.lime,
+        toggleableActiveColor: Colors.lime,
+        brightness: Brightness.dark,
+      ),
+      themeMode: ThemeMode.system,
       home: ConfigurationRoute(),
     );
   }
