@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_linkify/flutter_linkify.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:bike_route_generator/ors/url_launching.dart';
 
 class CreditsRoute extends StatelessWidget {
   CreditsRoute({Key? key}) : super(key: key);
@@ -28,7 +28,7 @@ class CreditsRoute extends StatelessWidget {
                 options: LinkifyOptions(humanize: false),
                 text:
                     '''This app utilizes libraries ans services listed below. Source code can be found at https://github.com/PawelRaciborski/bike-route-generator''',
-                onOpen: (link) => _launchURL(link.url),
+                onOpen: (link) => launchURL(link.url),
               ),
             ),
             Expanded(
@@ -39,7 +39,7 @@ class CreditsRoute extends StatelessWidget {
                   return ListTile(
                     title: Text(entry.key),
                     onTap: () {
-                      _launchURL(entry.value);
+                      launchURL(entry.value);
                     },
                   );
                 },
@@ -49,11 +49,4 @@ class CreditsRoute extends StatelessWidget {
         ),
       );
 
-  void _launchURL(String url) async => await canLaunch(url)
-      ? await launch(
-          url,
-          forceSafariVC: false,
-          forceWebView: false,
-        )
-      : throw 'Could not launch $url';
 }

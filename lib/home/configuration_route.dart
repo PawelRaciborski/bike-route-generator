@@ -2,7 +2,9 @@ import 'dart:math';
 
 import 'package:bike_route_generator/credits/credits_route.dart';
 import 'package:bike_route_generator/ors/ors_api.dart';
+import 'package:bike_route_generator/ors/url_launching.dart';
 import 'package:bike_route_generator/secrets.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_spinbox/material.dart';
@@ -82,26 +84,39 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
       originLocation = Coords(_latitude!, _longitude!);
     }
 
-    final maps = await MapLauncher.installedMaps;
+    Future<void> Function(List<Coords> value) generatedRouteHandler;
 
-    AvailableMap map;
+    if (kIsWeb) {
+      generatedRouteHandler = (value) async {
+        launchURL(generateGoogleMapsUrl(value));
+      };
+    } else {
+      AvailableMap map;
 
-    try {
-      map = maps.firstWhere(
-        (element) => element.mapType == MapType.google,
-      );
-    } on Error catch (error) {
-      // TODO display no google maps error message
-      return;
+      final maps = await MapLauncher.installedMaps;
+
+      try {
+        map = maps.firstWhere(
+          (element) => element.mapType == MapType.google,
+        );
+      } on Error catch (error) {
+        final snackBar = SnackBar(
+            content: Text(
+                "Could not get a map, please try again or select different destination app."));
+        ScaffoldMessenger.of(context).showSnackBar(snackBar);
+        return;
+      }
+
+      generatedRouteHandler = (value) => map.showDirections(
+            origin: value.first,
+            destination: value.last,
+            waypoints: value.sublist(1, value.length - 1),
+          );
     }
 
     api
         .generateRoute(originLocation, _length, _safeSeed, _points)
-        .then((value) => map.showDirections(
-              origin: value.first,
-              destination: value.last,
-              waypoints: value.sublist(1, value.length - 1),
-            ));
+        .then(generatedRouteHandler);
   }
 
   Widget _buildOriginOptionSelector() => Column(
