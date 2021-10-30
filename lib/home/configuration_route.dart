@@ -10,6 +10,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_spinbox/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:map_launcher/map_launcher.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import 'reg_exp_text_field.dart';
 
@@ -43,16 +44,7 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
-                  _buildOriginOptionSelector(),
-                  AnimatedCrossFade(
-                    duration: const Duration(milliseconds: 150),
-                    firstChild: _buildCustomLocationInput(),
-                    secondChild: Container(),
-                    // Second child just to made coords input disappear
-                    crossFadeState: _useCustomLocation
-                        ? CrossFadeState.showFirst
-                        : CrossFadeState.showSecond,
-                  ),
+                  _buildRouteOriginSection(),
                   _buildRoundTripDetailsInput()
                 ],
               )),
@@ -64,6 +56,23 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
               )
             : null,
       );
+
+  Widget _buildRouteOriginSection() {
+    return Column(
+      children: [
+        _buildOriginOptionSelector(),
+        AnimatedCrossFade(
+          duration: const Duration(milliseconds: 150),
+          firstChild: _buildCustomLocationInput(),
+          secondChild: Container(),
+          // Second child just to made coords input disappear
+          crossFadeState: _useCustomLocation
+              ? CrossFadeState.showFirst
+              : CrossFadeState.showSecond,
+        ),
+      ],
+    );
+  }
 
   bool get _isInputValid =>
       !_useCustomLocation || (_latitude != null && _longitude != null);
