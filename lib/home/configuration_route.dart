@@ -4,13 +4,12 @@ import 'package:bike_route_generator/credits/credits_route.dart';
 import 'package:bike_route_generator/ors/ors_api.dart';
 import 'package:bike_route_generator/ors/url_launching.dart';
 import 'package:bike_route_generator/secrets.dart';
+import 'package:bike_route_generator/ui/OrientationAwareBuilder.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_spinbox/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:map_launcher/map_launcher.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 import 'reg_exp_text_field.dart';
 
@@ -40,14 +39,16 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
           ],
         ),
         body: SingleChildScrollView(
-          child: Padding(
+          child: Container(
+            alignment: Alignment.center,
+            child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  _buildRouteOriginSection(),
-                  _buildRoundTripDetailsInput()
-                ],
-              )),
+              child: Container(
+                constraints: BoxConstraints(maxWidth: 600),
+                child: buildOrientationAwareContent(),
+              ),
+            ),
+          ),
         ),
         floatingActionButton: _isInputValid
             ? FloatingActionButton(
@@ -56,6 +57,21 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
               )
             : null,
       );
+
+  Widget buildOrientationAwareContent() => OrientationAwareBuilder(
+      builder: (context, orientation) => orientation == Orientation.portrait
+          ? Column(
+              children: [
+                _buildRouteOriginSection(),
+                _buildRoundTripDetailsInput()
+              ],
+            )
+          : Row(
+              children: [
+                Flexible(flex: 1, child: _buildRouteOriginSection()),
+                Flexible(flex: 1, child: _buildRoundTripDetailsInput())
+              ],
+            ));
 
   Widget _buildRouteOriginSection() {
     return Column(
@@ -160,7 +176,7 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
   Widget _buildCustomLocationInput() => Column(
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4.0),
+            padding: const EdgeInsets.all(4.0),
             child: RegExpTextField(
               RegExp(r'^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?)$'),
               keyboardType: TextInputType.number,
@@ -174,7 +190,7 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4.0),
+            padding: const EdgeInsets.all(4.0),
             child: RegExpTextField(
               RegExp(r'^\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$'),
               keyboardType: TextInputType.number,
