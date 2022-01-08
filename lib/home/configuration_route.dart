@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:bike_route_generator/credits/credits_route.dart';
+import 'package:bike_route_generator/home/map_selection_dialog.dart';
 import 'package:bike_route_generator/ors/ors_api.dart';
 import 'package:bike_route_generator/ors/url_launching.dart';
 import 'package:bike_route_generator/secrets.dart';
@@ -10,6 +11,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinbox/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:map_launcher/map_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:collection/collection.dart';
 
 import 'reg_exp_text_field.dart';
 
@@ -21,9 +24,11 @@ class ConfigurationRoute extends StatefulWidget {
 class _ConfigurationRouteState extends State<ConfigurationRoute> {
   static final api = const OrsApi(apiKey: orsApiKey);
   bool _useCustomLocation = false;
+  Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) =>
+      Scaffold(
         appBar: AppBar(
           title: Text("Bike Route Generator"),
           actions: [
@@ -52,26 +57,28 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
         ),
         floatingActionButton: _isInputValid
             ? FloatingActionButton(
-                onPressed: _confirmButtonOnPressed,
-                child: Icon(Icons.directions_bike),
-              )
+          onPressed: _confirmButtonOnPressed,
+          child: Icon(Icons.directions_bike),
+        )
             : null,
       );
 
-  Widget buildOrientationAwareContent() => OrientationAwareBuilder(
-      builder: (context, orientation) => orientation == Orientation.portrait
-          ? Column(
-              children: [
-                _buildRouteOriginSection(),
-                _buildRoundTripDetailsInput()
-              ],
-            )
-          : Row(
-              children: [
-                Flexible(flex: 1, child: _buildRouteOriginSection()),
-                Flexible(flex: 1, child: _buildRoundTripDetailsInput())
-              ],
-            ));
+  Widget buildOrientationAwareContent() =>
+      OrientationAwareBuilder(
+          builder: (context, orientation) =>
+          orientation == Orientation.portrait
+              ? Column(
+            children: [
+              _buildRouteOriginSection(),
+              _buildRoundTripDetailsInput()
+            ],
+          )
+              : Row(
+            children: [
+              Flexible(flex: 1, child: _buildRouteOriginSection()),
+              Flexible(flex: 1, child: _buildRoundTripDetailsInput())
+            ],
+          ));
 
   Widget _buildRouteOriginSection() {
     return Column(
@@ -93,11 +100,12 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
   bool get _isInputValid =>
       !_useCustomLocation || (_latitude != null && _longitude != null);
 
-  Function()? get _confirmButtonOnPressed => _isInputValid
-      ? () {
-          _generateRoute();
-        }
-      : null;
+  Function()? get _confirmButtonOnPressed =>
+      _isInputValid
+          ? () {
+        _generateRoute();
+      }
+          : null;
 
   void _generateRoute() async {
     Coords originLocation;
@@ -109,42 +117,78 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
       originLocation = Coords(_latitude!, _longitude!);
     }
 
-    Future<void> Function(List<Coords> value) generatedRouteHandler;
+    Future<void> Function(List<Coords> value) generatedRouteHandler =
+        (vals) async {
+      /*donothing*/
+    };
 
     if (kIsWeb) {
       generatedRouteHandler = (value) async {
         launchURL(generateGoogleMapsUrl(value));
       };
     } else {
-      AvailableMap map;
-
       final maps = await MapLauncher.installedMaps;
 
-      try {
-        map = maps.firstWhere(
-          (element) => element.mapType == MapType.google,
-        );
-      } on Error catch (error) {
-        final snackBar = SnackBar(
-            content: Text(
-                "Could not get a map, please try again or select different destination app."));
-        ScaffoldMessenger.of(context).showSnackBar(snackBar);
+      final MapType? preselectedMap = await _prefs.then((prefs) {
+        final String? selectedMapTypeString =
+        prefs.getString(selectedMapPrefsKey);
+
+        if (selectedMapTypeString == null) return null;
+
+        return MapType.values.firstWhereOrNull(
+                (element) => element.name == selectedMapTypeString);
+      });
+
+      if (preselectedMap != null) {
+        startNavigation(
+            maps, preselectedMap, generatedRouteHandler, originLocation);
         return;
       }
 
-      generatedRouteHandler = (value) => map.showDirections(
-            origin: value.first,
-            destination: value.last,
-            waypoints: value.sublist(1, value.length - 1),
-          );
+      showDialog(
+        context: context,
+        builder: (context) => _buildMapSelectionDialog(maps),
+      ).then((value) =>
+          startNavigation(maps, value, generatedRouteHandler, originLocation));
     }
+  }
+
+  void startNavigation(List<AvailableMap> maps, MapType mapType,
+      Future<void> Function(List<Coords> value) generatedRouteHandler,
+      Coords originLocation) {
+    AvailableMap map;
+
+    try {
+      map = maps.firstWhere(
+            (element) => element.mapType == mapType,
+      );
+    } on Error catch (error) {
+      final snackBar = SnackBar(
+          content: Text(
+              "Could not get a map, please try again or select different destination app."));
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+      return;
+    }
+
+    generatedRouteHandler = (value) =>
+        map.showDirections(
+          origin: value.first,
+          destination: value.last,
+          waypoints: value.sublist(1, value.length - 1),
+        );
 
     api
         .generateRoute(originLocation, _length, _safeSeed, _points)
         .then(generatedRouteHandler);
   }
 
-  Widget _buildOriginOptionSelector() => Column(
+  Widget _buildMapSelectionDialog(List<AvailableMap> maps) =>
+      MapSelectionDialog(
+        maps: maps,
+      );
+
+  Widget _buildOriginOptionSelector() =>
+      Column(
         children: [
           Text("Select route origin:"),
           RadioListTile<bool>(
@@ -173,7 +217,8 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
   double? _latitude;
   double? _longitude;
 
-  Widget _buildCustomLocationInput() => Column(
+  Widget _buildCustomLocationInput() =>
+      Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(4.0),
@@ -252,7 +297,9 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
               child: IconButton(
                 icon: Icon(
                   Icons.casino_outlined,
-                  color: Theme.of(context).accentColor,
+                  color: Theme
+                      .of(context)
+                      .accentColor,
                 ),
                 onPressed: () {
                   setState(() {
