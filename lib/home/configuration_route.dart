@@ -1,15 +1,18 @@
 import 'dart:math';
 
 import 'package:bike_route_generator/credits/credits_route.dart';
+import 'package:bike_route_generator/home/map_selection_dialog.dart';
 import 'package:bike_route_generator/ors/ors_api.dart';
 import 'package:bike_route_generator/ors/url_launching.dart';
 import 'package:bike_route_generator/secrets.dart';
 import 'package:bike_route_generator/ui/OrientationAwareBuilder.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_spinbox/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:map_launcher/map_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'reg_exp_text_field.dart';
 
@@ -21,6 +24,7 @@ class ConfigurationRoute extends StatefulWidget {
 class _ConfigurationRouteState extends State<ConfigurationRoute> {
   static final api = const OrsApi(apiKey: orsApiKey);
   bool _useCustomLocation = false;
+  Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -109,40 +113,76 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
       originLocation = Coords(_latitude!, _longitude!);
     }
 
-    Future<void> Function(List<Coords> value) generatedRouteHandler;
+    Future<void> Function(List<Coords> value) generatedRouteHandler =
+        (vals) async {
+      /*donothing*/
+    };
 
     if (kIsWeb) {
       generatedRouteHandler = (value) async {
         launchURL(generateGoogleMapsUrl(value));
       };
     } else {
-      AvailableMap map;
-
       final maps = await MapLauncher.installedMaps;
 
-      try {
-        map = maps.firstWhere(
-          (element) => element.mapType == MapType.google,
-        );
-      } on Error catch (error) {
-        final snackBar = SnackBar(
-            content: Text(
-                "Could not get a map, please try again or select different destination app."));
-        ScaffoldMessenger.of(context).showSnackBar(snackBar);
+      final MapType? preselectedMap = await _prefs.then((prefs) {
+        final String? selectedMapTypeString =
+            prefs.getString(selectedMapPrefsKey);
+
+        if (selectedMapTypeString == null) return null;
+
+        return MapType.values.firstWhereOrNull(
+            (element) => element.name == selectedMapTypeString);
+      });
+
+      if (preselectedMap != null) {
+        startNavigation(
+            maps, preselectedMap, generatedRouteHandler, originLocation);
         return;
       }
 
-      generatedRouteHandler = (value) => map.showDirections(
-            origin: value.first,
-            destination: value.last,
-            waypoints: value.sublist(1, value.length - 1),
-          );
+      showDialog(
+        context: context,
+        builder: (context) => _buildMapSelectionDialog(maps),
+      ).then((value) =>
+          startNavigation(maps, value, generatedRouteHandler, originLocation));
     }
+  }
+
+  void startNavigation(
+      List<AvailableMap> maps,
+      MapType mapType,
+      Future<void> Function(List<Coords> value) generatedRouteHandler,
+      Coords originLocation) {
+    AvailableMap map;
+
+    try {
+      map = maps.firstWhere(
+        (element) => element.mapType == mapType,
+      );
+    } on Error catch (error) {
+      final snackBar = SnackBar(
+          content: Text(
+              "Could not get a map, please try again or select different destination app."));
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+      return;
+    }
+
+    generatedRouteHandler = (value) => map.showDirections(
+          origin: value.first,
+          destination: value.last,
+          waypoints: value.sublist(1, value.length - 1),
+        );
 
     api
         .generateRoute(originLocation, _length, _safeSeed, _points)
         .then(generatedRouteHandler);
   }
+
+  Widget _buildMapSelectionDialog(List<AvailableMap> maps) =>
+      MapSelectionDialog(
+        maps: maps,
+      );
 
   Widget _buildOriginOptionSelector() => Column(
         children: [
@@ -252,7 +292,7 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
               child: IconButton(
                 icon: Icon(
                   Icons.casino_outlined,
-                  color: Theme.of(context).accentColor,
+                  color: Theme.of(context).colorScheme.secondary,
                 ),
                 onPressed: () {
                   setState(() {
