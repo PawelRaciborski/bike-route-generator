@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:bike_route_generator/credits/credits_route.dart';
+import 'package:bike_route_generator/favs/favs_route.dart';
 import 'package:bike_route_generator/home/map_selection_dialog.dart';
 import 'package:bike_route_generator/ors/ors_api.dart';
 import 'package:bike_route_generator/ors/url_launching.dart';
@@ -36,10 +37,19 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
                   Navigator.push(
                       context,
                       MaterialPageRoute(
+                        builder: (context) => FavsRoute(),
+                      ));
+                },
+                icon: Icon(Icons.favorite)),
+            IconButton(
+                onPressed: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
                         builder: (context) => CreditsRoute(),
                       ));
                 },
-                icon: Icon(Icons.info_outline))
+                icon: Icon(Icons.info_outline)),
           ],
         ),
         body: SingleChildScrollView(
@@ -160,7 +170,7 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
       map = maps.firstWhere(
         (element) => element.mapType == mapType,
       );
-    } on Error catch (error) {
+    } on Error {
       final snackBar = SnackBar(
           content: Text(
               "Could not get a map, please try again or select different destination app."));
@@ -310,6 +320,11 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
           decoration: InputDecoration(labelText: "Points"),
           onChanged: (value) => _points = value.toInt(),
         ),
+        ElevatedButton.icon(
+          onPressed: () {},
+          icon: Icon(Icons.favorite_border),
+          label: Text("add route to favourite"),
+        )
       ],
     );
   }
