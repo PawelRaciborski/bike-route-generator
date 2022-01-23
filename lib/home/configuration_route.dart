@@ -2,7 +2,9 @@ import 'dart:math';
 
 import 'package:bike_route_generator/credits/credits_route.dart';
 import 'package:bike_route_generator/favs/favs_route.dart';
+import 'package:bike_route_generator/favs/model/fav_repo.dart';
 import 'package:bike_route_generator/home/map_selection_dialog.dart';
+import 'package:bike_route_generator/main.dart';
 import 'package:bike_route_generator/ors/ors_api.dart';
 import 'package:bike_route_generator/ors/url_launching.dart';
 import 'package:bike_route_generator/secrets.dart';
@@ -33,11 +35,13 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
           title: Text("Bike Route Generator"),
           actions: [
             IconButton(
-                onPressed: () {
+                onPressed: () async {
+                  final repo = await injector.getAsync<FavRouteRepository>();
+
                   Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => FavsRoute(),
+                        builder: (context) => FavouriteRoute(repo),
                       ));
                 },
                 icon: Icon(Icons.favorite)),
@@ -321,7 +325,10 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
           onChanged: (value) => _points = value.toInt(),
         ),
         ElevatedButton.icon(
-          onPressed: () {},
+          onPressed: () async {
+            final repo = await injector.getAsync<FavRouteRepository>();
+            repo.insertLocation('ASDSASD ${DateTime.now()}');
+          },
           icon: Icon(Icons.favorite_border),
           label: Text("add route to favourite"),
         )

@@ -1,7 +1,15 @@
+import 'package:bike_route_generator/favs/model/fav_repo.dart';
 import 'package:bike_route_generator/home/configuration_route.dart';
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 
-void main() {
+GetIt injector = GetIt.instance;
+
+Future<void> main() async {
+  injector.registerSingletonAsync<FavRouteRepository>(
+    () => FavRouteRepository.initialize(),
+  );
+
   runApp(RouteGeneratorApp());
 }
 
@@ -16,7 +24,6 @@ class RouteGeneratorApp extends StatelessWidget {
       ),
       darkTheme: ThemeData(
         primaryColor: Colors.lime,
-        accentColor: Colors.lime,
         primaryColorDark: Colors.lime,
         primaryColorLight: Colors.lime,
         toggleableActiveColor: Colors.lime,
