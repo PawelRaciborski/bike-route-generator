@@ -21,6 +21,21 @@ class FavRoute {
     required this.latitude,
     required this.longitude,
   });
+
+  Map<String, dynamic> toJson() =>
+      {
+        'name': name,
+        'seed': seed,
+        'latitude': latitude,
+        'longitude': longitude
+      };
+
+  FavRoute.fromJson(Map<String, dynamic> json)
+      : name = json['name'],
+        latitude = json['latitude'],
+        longitude = json['longitude'],
+        seed = json['seed'],
+        id = null;
 }
 
 @dao

@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:bike_route_generator/credits/credits_route.dart';
 import 'package:bike_route_generator/favs/favs_route.dart';
 import 'package:bike_route_generator/favs/model/fav_repo.dart';
+import 'package:bike_route_generator/favs/model/fav_route.dart';
 import 'package:bike_route_generator/home/map_selection_dialog.dart';
 import 'package:bike_route_generator/main.dart';
 import 'package:bike_route_generator/ors/ors_api.dart';
@@ -37,7 +38,6 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
             IconButton(
                 onPressed: () async {
                   final repo = await injector.getAsync<FavRouteRepository>();
-
                   Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -118,14 +118,7 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
       : null;
 
   void _generateRoute() async {
-    Coords originLocation;
-
-    if (!_useCustomLocation) {
-      originLocation = await _determinePosition()
-          .then((value) => Coords(value.latitude, value.longitude));
-    } else {
-      originLocation = Coords(_latitude!, _longitude!);
-    }
+    final originLocation = await _originLocation;
 
     Future<void> Function(List<Coords> value) generatedRouteHandler =
         (vals) async {
@@ -158,8 +151,16 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
       showDialog(
         context: context,
         builder: (context) => _buildMapSelectionDialog(maps),
-      ).then((value) =>
-          startNavigation(maps, value, generatedRouteHandler, originLocation));
+      );
+    }
+  }
+
+  Future<Coords> get _originLocation async {
+    if (!_useCustomLocation) {
+      return await _determinePosition()
+          .then((value) => Coords(value.latitude, value.longitude));
+    } else {
+      return Coords(_latitude!, _longitude!);
     }
   }
 
@@ -325,10 +326,20 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
           onChanged: (value) => _points = value.toInt(),
         ),
         ElevatedButton.icon(
-          onPressed: () async {
-            final repo = await injector.getAsync<FavRouteRepository>();
-            repo.insertLocation('ASDSASD ${DateTime.now()}');
-          },
+          onPressed: _isInputValid
+              ? () async {
+                  final originLocation = await _originLocation;
+                  final repo = await injector.getAsync<FavRouteRepository>();
+
+                  repo.insertLocation(
+                    FavRoute(
+                        name: "Route ${DateTime.now()}",
+                        latitude: originLocation.latitude,
+                        longitude: originLocation.longitude,
+                        seed: _safeSeed),
+                  );
+                }
+              : null,
           icon: Icon(Icons.favorite_border),
           label: Text("add route to favourite"),
         )

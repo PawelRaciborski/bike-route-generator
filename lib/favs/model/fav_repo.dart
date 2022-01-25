@@ -14,12 +14,9 @@ class FavRouteRepository {
     return FavRouteRepository(database);
   }
 
-  Future<void> insertLocation(String name) => _favRouteDao.insertRoute(FavRoute(
-        latitude: 1.0,
-        longitude: 1.0,
-        name: name,
-        seed: 1,
-      ));
+  // Decouple DB model from logic model
+  Future<void> insertLocation(FavRoute favRoute) =>
+      _favRouteDao.insertRoute(favRoute);
 
   Future<List<FavRoute>> getAll() => _favRouteDao.findAllRoutes();
 }
