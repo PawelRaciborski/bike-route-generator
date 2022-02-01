@@ -13,11 +13,13 @@ import 'package:bike_route_generator/ui/OrientationAwareBuilder.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:flutter_spinbox/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:map_launcher/map_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'configuration_store.dart';
 import 'reg_exp_text_field.dart';
 
 class ConfigurationRoute extends StatefulWidget {
@@ -29,52 +31,55 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
   static final api = const OrsApi(apiKey: orsApiKey);
   bool _useCustomLocation = false;
   Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
+  Configuration _configuration = injector.get<Configuration>();
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          title: Text("Bike Route Generator"),
-          actions: [
-            IconButton(
-                onPressed: () async {
-                  final repo = await injector.getAsync<FavRouteRepository>();
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => FavouriteRoute(repo),
-                      ));
-                },
-                icon: Icon(Icons.favorite)),
-            IconButton(
-                onPressed: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => CreditsRoute(),
-                      ));
-                },
-                icon: Icon(Icons.info_outline)),
-          ],
-        ),
-        body: SingleChildScrollView(
-          child: Container(
-            alignment: Alignment.center,
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
+  Widget build(BuildContext context) => Observer(
+    builder: (_) => Scaffold(
+            appBar: AppBar(
+              title: Text("Bike Route Generator"),
+              actions: [
+                IconButton(
+                    onPressed: () async {
+                      final repo = await injector.getAsync<FavRouteRepository>();
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => FavouriteRoute(repo),
+                          ));
+                    },
+                    icon: Icon(Icons.favorite)),
+                IconButton(
+                    onPressed: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CreditsRoute(),
+                          ));
+                    },
+                    icon: Icon(Icons.info_outline)),
+              ],
+            ),
+            body: SingleChildScrollView(
               child: Container(
-                constraints: BoxConstraints(maxWidth: 600),
-                child: buildOrientationAwareContent(),
+                alignment: Alignment.center,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Container(
+                    constraints: BoxConstraints(maxWidth: 600),
+                    child: buildOrientationAwareContent(),
+                  ),
+                ),
               ),
             ),
+            floatingActionButton: _isInputValid
+                ? FloatingActionButton(
+                    onPressed: _confirmButtonOnPressed,
+                    child: Icon(Icons.directions_bike),
+                  )
+                : null,
           ),
-        ),
-        floatingActionButton: _isInputValid
-            ? FloatingActionButton(
-                onPressed: _confirmButtonOnPressed,
-                child: Icon(Icons.directions_bike),
-              )
-            : null,
-      );
+  );
 
   Widget buildOrientationAwareContent() => OrientationAwareBuilder(
       builder: (context, orientation) => orientation == Orientation.portrait
@@ -109,7 +114,7 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
   }
 
   bool get _isInputValid =>
-      !_useCustomLocation || (_latitude != null && _longitude != null);
+      !_useCustomLocation || _configuration.locationValid;
 
   Function()? get _confirmButtonOnPressed => _isInputValid
       ? () {
@@ -160,7 +165,7 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
       return await _determinePosition()
           .then((value) => Coords(value.latitude, value.longitude));
     } else {
-      return Coords(_latitude!, _longitude!);
+      return Coords(_configuration.latitude!, _configuration.longitude!);
     }
   }
 
@@ -225,8 +230,8 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
         ],
       );
 
-  double? _latitude;
-  double? _longitude;
+  // double? _latitude;
+  // double? _longitude;
 
   Widget _buildCustomLocationInput() => Column(
         children: [
@@ -238,9 +243,12 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
               labelText: 'Latitude',
               enabled: _useCustomLocation,
               onChange: (isValid, value) {
-                setState(() {
-                  _latitude = isValid ? double.parse(value) : null;
-                });
+                // setState(() {
+                  _configuration.latitude =
+                      isValid ? double.parse(value) : null;
+
+                  // _latitude = isValid ? double.parse(value) : null;
+                // });
               },
             ),
           ),
@@ -252,9 +260,10 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
               labelText: 'Longitude',
               enabled: _useCustomLocation,
               onChange: (isValid, value) {
-                setState(() {
-                  _longitude = isValid ? double.parse(value) : null;
-                });
+                // setState(() {
+                  _configuration.longitude =
+                      isValid ? double.parse(value) : null;
+                // });
               },
             ),
           ),

@@ -1,15 +1,17 @@
 import 'package:bike_route_generator/favs/model/fav_repo.dart';
 import 'package:bike_route_generator/home/configuration_route.dart';
+import 'package:bike_route_generator/home/configuration_store.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 
 GetIt injector = GetIt.instance;
 
 Future<void> main() async {
-  injector.registerSingletonAsync<FavRouteRepository>(
-    () => FavRouteRepository.initialize(),
-  );
-
+  injector
+    ..registerSingletonAsync<FavRouteRepository>(
+      () => FavRouteRepository.initialize(),
+    )
+    ..registerFactory<Configuration>(() => Configuration());
   runApp(RouteGeneratorApp());
 }
 
