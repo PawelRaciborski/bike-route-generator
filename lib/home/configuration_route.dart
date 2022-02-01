@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:bike_route_generator/credits/credits_route.dart';
 import 'package:bike_route_generator/favs/favs_route.dart';
 import 'package:bike_route_generator/favs/model/fav_repo.dart';
@@ -34,51 +32,51 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
 
   @override
   Widget build(BuildContext context) => Observer(
-    builder: (_) => Scaffold(
-            appBar: AppBar(
-              title: Text("Bike Route Generator"),
-              actions: [
-                IconButton(
-                    onPressed: () async {
-                      final repo = await injector.getAsync<FavRouteRepository>();
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => FavouriteRoute(repo),
-                          ));
-                    },
-                    icon: Icon(Icons.favorite)),
-                IconButton(
-                    onPressed: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => CreditsRoute(),
-                          ));
-                    },
-                    icon: Icon(Icons.info_outline)),
-              ],
-            ),
-            body: SingleChildScrollView(
-              child: Container(
-                alignment: Alignment.center,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Container(
-                    constraints: BoxConstraints(maxWidth: 600),
-                    child: buildOrientationAwareContent(),
-                  ),
+        builder: (_) => Scaffold(
+          appBar: AppBar(
+            title: Text("Bike Route Generator"),
+            actions: [
+              IconButton(
+                  onPressed: () async {
+                    final repo = await injector.getAsync<FavRouteRepository>();
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => FavouriteRoute(repo),
+                        ));
+                  },
+                  icon: Icon(Icons.favorite)),
+              IconButton(
+                  onPressed: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CreditsRoute(),
+                        ));
+                  },
+                  icon: Icon(Icons.info_outline)),
+            ],
+          ),
+          body: SingleChildScrollView(
+            child: Container(
+              alignment: Alignment.center,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Container(
+                  constraints: BoxConstraints(maxWidth: 600),
+                  child: buildOrientationAwareContent(),
                 ),
               ),
             ),
-            floatingActionButton: _configuration.locationInputValid
-                ? FloatingActionButton(
-                    onPressed: _confirmButtonOnPressed,
-                    child: Icon(Icons.directions_bike),
-                  )
-                : null,
           ),
-  );
+          floatingActionButton: _configuration.locationInputValid
+              ? FloatingActionButton(
+                  onPressed: _confirmButtonOnPressed,
+                  child: Icon(Icons.directions_bike),
+                )
+              : null,
+        ),
+      );
 
   Widget buildOrientationAwareContent() => OrientationAwareBuilder(
       builder: (context, orientation) => orientation == Orientation.portrait
@@ -191,7 +189,12 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
         );
 
     api
-        .generateRoute(originLocation, _length, _safeSeed, _points)
+        .generateRoute(
+          originLocation,
+          _configuration.length,
+          _configuration.seed,
+          _configuration.points,
+        )
         .then(generatedRouteHandler);
   }
 
@@ -201,7 +204,7 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
       );
 
   Widget _buildOriginOptionSelector() => Observer(
-    builder: (_) => Column(
+        builder: (_) => Column(
           children: [
             Text("Select route origin:"),
             RadioListTile<bool>(
@@ -209,7 +212,7 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
               groupValue: _configuration.locationMode,
               title: Text("Current Location"),
               onChanged: (value) {
-                  _configuration.locationMode = false;
+                _configuration.locationMode = false;
               },
             ),
             RadioListTile<bool>(
@@ -217,12 +220,12 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
               groupValue: _configuration.locationMode,
               title: Text("Custom Location"),
               onChanged: (value) {
-                  _configuration.locationMode = true;
+                _configuration.locationMode = true;
               },
             ),
           ],
         ),
-  );
+      );
 
   // double? _latitude;
   // double? _longitude;
@@ -237,8 +240,7 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
               labelText: 'Latitude',
               enabled: _configuration.locationMode,
               onChange: (isValid, value) {
-                  _configuration.latitude =
-                      isValid ? double.parse(value) : null;
+                _configuration.latitude = isValid ? double.parse(value) : null;
               },
             ),
           ),
@@ -250,97 +252,80 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
               labelText: 'Longitude',
               enabled: _configuration.locationMode,
               onChange: (isValid, value) {
-                  _configuration.longitude =
-                      isValid ? double.parse(value) : null;
+                _configuration.longitude = isValid ? double.parse(value) : null;
               },
             ),
           ),
         ],
       );
 
-  int _length = 20;
-  int? _seed;
-
-  int get _safeSeed {
-    if (_seed == null) {
-      _seed = generateNextSeed();
-    }
-    return _seed ?? 0;
-  }
-
-  final random = new Random();
-
-  int generateNextSeed() => random.nextInt(1000);
-
-  int _points = 5;
-
   Widget _buildRoundTripDetailsInput() {
-    return Column(
-      children: [
-        Text('Roundtrip config'),
-        SpinBox(
-          min: 1,
-          max: 1000,
-          value: _length.toDouble(),
-          decoration: InputDecoration(labelText: "Distance [km]"),
-          onChanged: (value) => _length = value.toInt(),
-        ),
-        Row(
-          mainAxisSize: MainAxisSize.max,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              flex: 6,
-              child: SpinBox(
-                min: 1,
-                max: 1023,
-                value: _safeSeed.toDouble(),
-                decoration: InputDecoration(labelText: "Seed"),
-                onChanged: (value) => _seed = value.toInt(),
-              ),
-            ),
-            Expanded(
-              flex: 1,
-              child: IconButton(
-                icon: Icon(
-                  Icons.casino_outlined,
-                  color: Theme.of(context).colorScheme.secondary,
+    return Observer(
+      builder: (_) => Column(
+        children: [
+          Text('Roundtrip config'),
+          SpinBox(
+            min: 1,
+            max: 1000,
+            value: _configuration.length.toDouble(),
+            decoration: InputDecoration(labelText: "Distance [km]"),
+            onChanged: (value) => _configuration.length = value.toInt(),
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.max,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                flex: 6,
+                child: SpinBox(
+                  min: 1,
+                  max: 1023,
+                  value: _configuration.seed.toDouble(),
+                  decoration: InputDecoration(labelText: "Seed"),
+                  onChanged: (value) => _configuration.seed = value.toInt(),
                 ),
-                onPressed: () {
-                  setState(() {
-                    _seed = generateNextSeed();
-                  });
-                },
               ),
-            )
-          ],
-        ),
-        SpinBox(
-          min: 3,
-          max: 10,
-          value: _points.toDouble(),
-          decoration: InputDecoration(labelText: "Points"),
-          onChanged: (value) => _points = value.toInt(),
-        ),
-        ElevatedButton.icon(
-          onPressed: _configuration.locationInputValid
-              ? () async {
-                  final originLocation = await _originLocation;
-                  final repo = await injector.getAsync<FavRouteRepository>();
+              Expanded(
+                flex: 1,
+                child: IconButton(
+                  icon: Icon(
+                    Icons.casino_outlined,
+                    color: Theme.of(context).colorScheme.secondary,
+                  ),
+                  onPressed: () {
+                    _configuration.refreshSeed();
+                  },
+                ),
+              )
+            ],
+          ),
+          SpinBox(
+            min: 3,
+            max: 10,
+            value: _configuration.points.toDouble(),
+            decoration: InputDecoration(labelText: "Points"),
+            onChanged: (value) => _configuration.points = value.toInt(),
+          ),
+          ElevatedButton.icon(
+            onPressed: _configuration.locationInputValid
+                ? () async {
+                    final originLocation = await _originLocation;
+                    final repo = await injector.getAsync<FavRouteRepository>();
 
-                  repo.insertLocation(
-                    FavRoute(
-                        name: "Route ${DateTime.now()}",
-                        latitude: originLocation.latitude,
-                        longitude: originLocation.longitude,
-                        seed: _safeSeed),
-                  );
-                }
-              : null,
-          icon: Icon(Icons.favorite_border),
-          label: Text("add route to favourite"),
-        )
-      ],
+                    repo.insertLocation(
+                      FavRoute(
+                          name: "Route ${DateTime.now()}",
+                          latitude: originLocation.latitude,
+                          longitude: originLocation.longitude,
+                          seed: _configuration.seed),
+                    );
+                  }
+                : null,
+            icon: Icon(Icons.favorite_border),
+            label: Text("add route to favourite"),
+          )
+        ],
+      ),
     );
   }
 
