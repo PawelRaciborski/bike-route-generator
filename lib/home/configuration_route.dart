@@ -29,7 +29,6 @@ class ConfigurationRoute extends StatefulWidget {
 
 class _ConfigurationRouteState extends State<ConfigurationRoute> {
   static final api = const OrsApi(apiKey: orsApiKey);
-  bool _useCustomLocation = false;
   Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
   Configuration _configuration = injector.get<Configuration>();
 
@@ -72,7 +71,7 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
                 ),
               ),
             ),
-            floatingActionButton: _isInputValid
+            floatingActionButton: _configuration.locationInputValid
                 ? FloatingActionButton(
                     onPressed: _confirmButtonOnPressed,
                     child: Icon(Icons.directions_bike),
@@ -105,7 +104,7 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
           firstChild: _buildCustomLocationInput(),
           secondChild: Container(),
           // Second child just to made coords input disappear
-          crossFadeState: _useCustomLocation
+          crossFadeState: _configuration.locationMode
               ? CrossFadeState.showFirst
               : CrossFadeState.showSecond,
         ),
@@ -113,10 +112,7 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
     );
   }
 
-  bool get _isInputValid =>
-      !_useCustomLocation || _configuration.locationValid;
-
-  Function()? get _confirmButtonOnPressed => _isInputValid
+  Function()? get _confirmButtonOnPressed => _configuration.locationInputValid
       ? () {
           _generateRoute();
         }
@@ -161,7 +157,7 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
   }
 
   Future<Coords> get _originLocation async {
-    if (!_useCustomLocation) {
+    if (!_configuration.locationInputValid) {
       return await _determinePosition()
           .then((value) => Coords(value.latitude, value.longitude));
     } else {
@@ -204,31 +200,29 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
         maps: maps,
       );
 
-  Widget _buildOriginOptionSelector() => Column(
-        children: [
-          Text("Select route origin:"),
-          RadioListTile<bool>(
-            value: false,
-            groupValue: _useCustomLocation,
-            title: Text("Current Location"),
-            onChanged: (value) {
-              setState(() {
-                _useCustomLocation = value ?? false;
-              });
-            },
-          ),
-          RadioListTile<bool>(
-            value: true,
-            groupValue: _useCustomLocation,
-            title: Text("Custom Location"),
-            onChanged: (value) {
-              setState(() {
-                _useCustomLocation = value ?? false;
-              });
-            },
-          ),
-        ],
-      );
+  Widget _buildOriginOptionSelector() => Observer(
+    builder: (_) => Column(
+          children: [
+            Text("Select route origin:"),
+            RadioListTile<bool>(
+              value: false,
+              groupValue: _configuration.locationMode,
+              title: Text("Current Location"),
+              onChanged: (value) {
+                  _configuration.locationMode = false;
+              },
+            ),
+            RadioListTile<bool>(
+              value: true,
+              groupValue: _configuration.locationMode,
+              title: Text("Custom Location"),
+              onChanged: (value) {
+                  _configuration.locationMode = true;
+              },
+            ),
+          ],
+        ),
+  );
 
   // double? _latitude;
   // double? _longitude;
@@ -241,14 +235,10 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
               RegExp(r'^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?)$'),
               keyboardType: TextInputType.number,
               labelText: 'Latitude',
-              enabled: _useCustomLocation,
+              enabled: _configuration.locationMode,
               onChange: (isValid, value) {
-                // setState(() {
                   _configuration.latitude =
                       isValid ? double.parse(value) : null;
-
-                  // _latitude = isValid ? double.parse(value) : null;
-                // });
               },
             ),
           ),
@@ -258,12 +248,10 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
               RegExp(r'^\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$'),
               keyboardType: TextInputType.number,
               labelText: 'Longitude',
-              enabled: _useCustomLocation,
+              enabled: _configuration.locationMode,
               onChange: (isValid, value) {
-                // setState(() {
                   _configuration.longitude =
                       isValid ? double.parse(value) : null;
-                // });
               },
             ),
           ),
@@ -335,7 +323,7 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
           onChanged: (value) => _points = value.toInt(),
         ),
         ElevatedButton.icon(
-          onPressed: _isInputValid
+          onPressed: _configuration.locationInputValid
               ? () async {
                   final originLocation = await _originLocation;
                   final repo = await injector.getAsync<FavRouteRepository>();

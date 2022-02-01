@@ -11,6 +11,10 @@ abstract class _Configuration with Store {
   @observable
   double? longitude;
 
+  @observable
+  bool locationMode = false;
+
   @computed
-  bool get locationValid => latitude != null && longitude != null;
+  bool get locationInputValid =>
+      !locationMode || (latitude != null && longitude != null);
 }
