@@ -1,21 +1,14 @@
 import 'package:bike_route_generator/credits/credits_route.dart';
 import 'package:bike_route_generator/favs/favs_route.dart';
 import 'package:bike_route_generator/favs/model/fav_repo.dart';
-import 'package:bike_route_generator/favs/model/fav_route.dart';
 import 'package:bike_route_generator/home/map_selection_dialog.dart';
 import 'package:bike_route_generator/main.dart';
-import 'package:bike_route_generator/ors/ors_api.dart';
-import 'package:bike_route_generator/ors/url_launching.dart';
-import 'package:bike_route_generator/secrets.dart';
 import 'package:bike_route_generator/ui/OrientationAwareBuilder.dart';
-import 'package:collection/collection.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:flutter_spinbox/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:map_launcher/map_launcher.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'configuration_store.dart';
 import 'reg_exp_text_field.dart';
@@ -26,8 +19,6 @@ class ConfigurationRoute extends StatefulWidget {
 }
 
 class _ConfigurationRouteState extends State<ConfigurationRoute> {
-  static final api = const OrsApi(apiKey: orsApiKey);
-  Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
   Configuration _configuration = injector.get<Configuration>();
 
   @override
@@ -102,7 +93,7 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
           firstChild: _buildCustomLocationInput(),
           secondChild: Container(),
           // Second child just to made coords input disappear
-          crossFadeState: _configuration.locationMode
+          crossFadeState: _configuration.locationMode.asBool
               ? CrossFadeState.showFirst
               : CrossFadeState.showSecond,
         ),
@@ -112,90 +103,14 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
 
   Function()? get _confirmButtonOnPressed => _configuration.locationInputValid
       ? () {
-          _generateRoute();
+          _configuration.navigate();
         }
       : null;
 
-  void _generateRoute() async {
-    final originLocation = await _originLocation;
-
-    Future<void> Function(List<Coords> value) generatedRouteHandler =
-        (vals) async {
-      /*donothing*/
-    };
-
-    if (kIsWeb) {
-      generatedRouteHandler = (value) async {
-        launchURL(generateGoogleMapsUrl(value));
-      };
-    } else {
-      final maps = await MapLauncher.installedMaps;
-
-      final MapType? preselectedMap = await _prefs.then((prefs) {
-        final String? selectedMapTypeString =
-            prefs.getString(selectedMapPrefsKey);
-
-        if (selectedMapTypeString == null) return null;
-
-        return MapType.values.firstWhereOrNull(
-            (element) => element.name == selectedMapTypeString);
-      });
-
-      if (preselectedMap != null) {
-        startNavigation(
-            maps, preselectedMap, generatedRouteHandler, originLocation);
-        return;
-      }
-
-      showDialog(
-        context: context,
-        builder: (context) => _buildMapSelectionDialog(maps),
-      );
-    }
-  }
-
-  Future<Coords> get _originLocation async {
-    if (!_configuration.locationInputValid) {
-      return await _determinePosition()
-          .then((value) => Coords(value.latitude, value.longitude));
-    } else {
-      return Coords(_configuration.latitude!, _configuration.longitude!);
-    }
-  }
-
-  void startNavigation(
-      List<AvailableMap> maps,
-      MapType mapType,
-      Future<void> Function(List<Coords> value) generatedRouteHandler,
-      Coords originLocation) {
-    AvailableMap map;
-
-    try {
-      map = maps.firstWhere(
-        (element) => element.mapType == mapType,
-      );
-    } on Error {
-      final snackBar = SnackBar(
-          content: Text(
-              "Could not get a map, please try again or select different destination app."));
-      ScaffoldMessenger.of(context).showSnackBar(snackBar);
-      return;
-    }
-
-    generatedRouteHandler = (value) => map.showDirections(
-          origin: value.first,
-          destination: value.last,
-          waypoints: value.sublist(1, value.length - 1),
-        );
-
-    api
-        .generateRoute(
-          originLocation,
-          _configuration.length,
-          _configuration.seed,
-          _configuration.points,
-        )
-        .then(generatedRouteHandler);
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    //TODO observe for dialog state changed
   }
 
   Widget _buildMapSelectionDialog(List<AvailableMap> maps) =>
@@ -209,26 +124,23 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
             Text("Select route origin:"),
             RadioListTile<bool>(
               value: false,
-              groupValue: _configuration.locationMode,
+              groupValue: _configuration.locationMode.asBool,
               title: Text("Current Location"),
               onChanged: (value) {
-                _configuration.locationMode = false;
+                _configuration.locationMode = RouteOriginLocation.current;
               },
             ),
             RadioListTile<bool>(
               value: true,
-              groupValue: _configuration.locationMode,
+              groupValue: _configuration.locationMode.asBool,
               title: Text("Custom Location"),
               onChanged: (value) {
-                _configuration.locationMode = true;
+                _configuration.locationMode = RouteOriginLocation.custom;
               },
             ),
           ],
         ),
       );
-
-  // double? _latitude;
-  // double? _longitude;
 
   Widget _buildCustomLocationInput() => Column(
         children: [
@@ -238,7 +150,7 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
               RegExp(r'^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?)$'),
               keyboardType: TextInputType.number,
               labelText: 'Latitude',
-              enabled: _configuration.locationMode,
+              enabled: _configuration.locationMode.asBool,
               onChange: (isValid, value) {
                 _configuration.latitude = isValid ? double.parse(value) : null;
               },
@@ -250,7 +162,7 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
               RegExp(r'^\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$'),
               keyboardType: TextInputType.number,
               labelText: 'Longitude',
-              enabled: _configuration.locationMode,
+              enabled: _configuration.locationMode.asBool,
               onChange: (isValid, value) {
                 _configuration.longitude = isValid ? double.parse(value) : null;
               },
@@ -309,16 +221,16 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
           ElevatedButton.icon(
             onPressed: _configuration.locationInputValid
                 ? () async {
-                    final originLocation = await _originLocation;
-                    final repo = await injector.getAsync<FavRouteRepository>();
-
-                    repo.insertLocation(
-                      FavRoute(
-                          name: "Route ${DateTime.now()}",
-                          latitude: originLocation.latitude,
-                          longitude: originLocation.longitude,
-                          seed: _configuration.seed),
-                    );
+                    // final originLocation = await _originLocation;
+                    // final repo = await injector.getAsync<FavRouteRepository>();
+                    //
+                    // repo.insertLocation(
+                    //   FavRoute(
+                    //       name: "Route ${DateTime.now()}",
+                    //       latitude: originLocation.latitude,
+                    //       longitude: originLocation.longitude,
+                    //       seed: _configuration.seed),
+                    // );
                   }
                 : null,
             icon: Icon(Icons.favorite_border),
@@ -353,4 +265,8 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
 
     return await Geolocator.getCurrentPosition();
   }
+}
+
+extension LocationModeConversion on RouteOriginLocation {
+  bool get asBool => this == RouteOriginLocation.custom;
 }

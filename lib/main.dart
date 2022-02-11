@@ -1,8 +1,11 @@
 import 'package:bike_route_generator/favs/model/fav_repo.dart';
 import 'package:bike_route_generator/home/configuration_route.dart';
 import 'package:bike_route_generator/home/configuration_store.dart';
+import 'package:bike_route_generator/ors/ors_api.dart';
+import 'package:bike_route_generator/secrets.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 GetIt injector = GetIt.instance;
 
@@ -11,7 +14,12 @@ Future<void> main() async {
     ..registerSingletonAsync<FavRouteRepository>(
       () => FavRouteRepository.initialize(),
     )
-    ..registerFactory<Configuration>(() => Configuration());
+    ..registerFactory(() => OrsApi(apiKey: orsApiKey))
+    ..registerFactoryAsync(() => SharedPreferences.getInstance())
+    ..registerFactory<Configuration>(() => Configuration(
+          injector.get(),
+          injector.getAsync(),
+        ));
   runApp(RouteGeneratorApp());
 }
 
