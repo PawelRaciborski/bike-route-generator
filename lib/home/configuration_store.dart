@@ -33,13 +33,20 @@ abstract class _Configuration with Store {
 
   @computed
   bool get locationInputValid =>
-      locationMode == RouteOriginLocation.current || (latitude != null && longitude != null);
+      locationMode == RouteOriginLocation.current ||
+      (latitude != null && longitude != null);
 
   @observable
   int length = 20;
 
   @observable
   int seed = 431;
+
+  @observable
+  List<AvailableMap> availableMaps = [];
+
+  @observable
+  bool showSelectionDialog = false;
 
   @action
   void refreshSeed() {
@@ -74,7 +81,7 @@ abstract class _Configuration with Store {
         launchURL(generateGoogleMapsUrl(value));
       };
     } else {
-      final maps = await MapLauncher.installedMaps;
+      availableMaps = await MapLauncher.installedMaps;
 
       final MapType? preselectedMap = await _prefs.then((prefs) {
         final String? selectedMapTypeString =
@@ -84,22 +91,30 @@ abstract class _Configuration with Store {
 
         return MapType.values.firstWhere(
           (element) => element.name == selectedMapTypeString,
-          orElse: () => MapType.google, //TODO: remove me!
         );
       });
 
       if (preselectedMap != null) {
         startNavigation(
-            maps, preselectedMap, generatedRouteHandler, originLocation);
+          availableMaps,
+          preselectedMap,
+          generatedRouteHandler,
+          originLocation,
+        );
         return;
       }
 
-      //TODO: Show dialog
-      // showDialog(
-      //   context: context,
-      //   builder: (context) => _buildMapSelectionDialog(maps),
-      // );
+      showSelectionDialog = true;
     }
+  }
+
+  void selectMap(AvailableMap selectedMap, bool rememberSelection) {
+    _prefs.then((prefs) {
+      if (rememberSelection) {
+        prefs.setString(selectedMapPrefsKey, selectedMap.mapType.name);
+      }
+      showSelectionDialog = false;
+    });
   }
 
   Future<Position> _determinePosition() async {

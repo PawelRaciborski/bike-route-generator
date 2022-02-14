@@ -9,6 +9,7 @@ import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:flutter_spinbox/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:map_launcher/map_launcher.dart';
+import 'package:mobx/mobx.dart';
 
 import 'configuration_store.dart';
 import 'reg_exp_text_field.dart';
@@ -19,7 +20,28 @@ class ConfigurationRoute extends StatefulWidget {
 }
 
 class _ConfigurationRouteState extends State<ConfigurationRoute> {
-  Configuration _configuration = injector.get<Configuration>();
+  final Configuration _configuration = injector.get<Configuration>();
+
+  final List<ReactionDisposer> _disposers = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _disposers.add(
+        reaction(
+                (_)=> _configuration.showSelectionDialog,
+                (_){
+              if (_configuration.showSelectionDialog) {
+                showDialog(
+                  context: context,
+                  builder: (context) =>
+                      _buildMapSelectionDialog(_configuration.availableMaps),
+                );
+              }
+            }
+        )
+    );
+  }
 
   @override
   Widget build(BuildContext context) => Observer(
@@ -116,6 +138,7 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
   Widget _buildMapSelectionDialog(List<AvailableMap> maps) =>
       MapSelectionDialog(
         maps: maps,
+        configuration: _configuration,
       );
 
   Widget _buildOriginOptionSelector() => Observer(
@@ -264,6 +287,12 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
     }
 
     return await Geolocator.getCurrentPosition();
+  }
+
+  @override
+  void dispose() {
+    _disposers.forEach((disposer) => disposer());
+    super.dispose();
   }
 }
 

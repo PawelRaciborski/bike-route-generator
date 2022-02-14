@@ -3,14 +3,20 @@ import 'package:flutter_svg/svg.dart';
 import 'package:map_launcher/map_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'configuration_store.dart';
+
 var selectedMapPrefsKey = "SELECTED_MAP";
 
 class MapSelectionDialog extends StatefulWidget {
   final List<AvailableMap> maps;
+  final Configuration configuration;
+
+
 
   const MapSelectionDialog({
     Key? key,
     required this.maps,
+    required this.configuration
   }) : super(key: key);
 
   @override
@@ -18,7 +24,7 @@ class MapSelectionDialog extends StatefulWidget {
 }
 
 class _MapSelectionDialogState extends State<MapSelectionDialog> {
-  Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
+  // Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
   bool _rememberSelection = true;
 
   @override
@@ -35,13 +41,8 @@ class _MapSelectionDialogState extends State<MapSelectionDialog> {
                   var map = widget.maps[index];
                   return ListTile(
                     onTap: () {
-                      _prefs.then((prefs) {
-                        if (_rememberSelection) {
-                          prefs.setString(
-                              selectedMapPrefsKey, map.mapType.name);
-                        }
-                        Navigator.pop(context, map.mapType);
-                      });
+                      widget.configuration.selectMap(map, _rememberSelection);
+                      Navigator.pop(context, map.mapType);
                     },
                     title: Text(map.mapName),
                     leading: SvgPicture.asset(
