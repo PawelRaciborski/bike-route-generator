@@ -48,6 +48,9 @@ abstract class _Configuration with Store {
   @observable
   bool showSelectionDialog = false;
 
+  @observable
+  bool isProcessing = false;
+
   @action
   void refreshSeed() {
     seed = _generateNextSeed();
@@ -68,7 +71,9 @@ abstract class _Configuration with Store {
   }
 
   @action
-  Future<void> navigate() async {
+  Future<void> navigate({MapType? mapType}) async {
+    isProcessing = true;
+
     final originLocation = await _originLocation;
 
     Future<void> Function(List<Coords> value) generatedRouteHandler =
@@ -83,16 +88,17 @@ abstract class _Configuration with Store {
     } else {
       availableMaps = await MapLauncher.installedMaps;
 
-      final MapType? preselectedMap = await _prefs.then((prefs) {
-        final String? selectedMapTypeString =
-            prefs.getString(selectedMapPrefsKey);
+      final MapType? preselectedMap = mapType ??
+          await _prefs.then((prefs) {
+            final String? selectedMapTypeString =
+                prefs.getString(selectedMapPrefsKey);
 
-        if (selectedMapTypeString == null) return null;
+            if (selectedMapTypeString == null) return null;
 
-        return MapType.values.firstWhere(
-          (element) => element.name == selectedMapTypeString,
-        );
-      });
+            return MapType.values.firstWhere(
+              (element) => element.name == selectedMapTypeString,
+            );
+          });
 
       if (preselectedMap != null) {
         startNavigation(
@@ -101,20 +107,27 @@ abstract class _Configuration with Store {
           generatedRouteHandler,
           originLocation,
         );
+        isProcessing = false;
         return;
       }
 
+      isProcessing = false;
       showSelectionDialog = true;
     }
   }
 
   void selectMap(AvailableMap selectedMap, bool rememberSelection) {
-    _prefs.then((prefs) {
-      if (rememberSelection) {
+    if (rememberSelection) {
+      _prefs.then((prefs) {
         prefs.setString(selectedMapPrefsKey, selectedMap.mapType.name);
-      }
+
+        showSelectionDialog = false;
+        navigate(mapType: selectedMap.mapType);
+      });
+    } else {
       showSelectionDialog = false;
-    });
+      navigate(mapType: selectedMap.mapType);
+    }
   }
 
   Future<Position> _determinePosition() async {

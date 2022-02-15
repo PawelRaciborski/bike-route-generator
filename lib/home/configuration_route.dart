@@ -25,25 +25,6 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
   final List<ReactionDisposer> _disposers = [];
 
   @override
-  void initState() {
-    super.initState();
-    _disposers.add(
-        reaction(
-                (_)=> _configuration.showSelectionDialog,
-                (_){
-              if (_configuration.showSelectionDialog) {
-                showDialog(
-                  context: context,
-                  builder: (context) =>
-                      _buildMapSelectionDialog(_configuration.availableMaps),
-                );
-              }
-            }
-        )
-    );
-  }
-
-  @override
   Widget build(BuildContext context) => Observer(
         builder: (_) => Scaffold(
           appBar: AppBar(
@@ -82,12 +63,17 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
               ),
             ),
           ),
-          floatingActionButton: _configuration.locationInputValid
-              ? FloatingActionButton(
-                  onPressed: _confirmButtonOnPressed,
-                  child: Icon(Icons.directions_bike),
-                )
-              : null,
+          floatingActionButton:
+              _configuration.locationInputValid
+                  ? FloatingActionButton(
+                      onPressed: _confirmButtonOnPressed,
+                      child: Icon(
+                        !_configuration.isProcessing
+                            ? Icons.directions_bike
+                            : Icons.hourglass_bottom,
+                      ),
+                    )
+                  : null,
         ),
       );
 
@@ -123,7 +109,7 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
     );
   }
 
-  Function()? get _confirmButtonOnPressed => _configuration.locationInputValid
+  Function()? get _confirmButtonOnPressed => _configuration.locationInputValid && !_configuration.isProcessing
       ? () {
           _configuration.navigate();
         }
@@ -132,7 +118,15 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    //TODO observe for dialog state changed
+    _disposers.add(reaction((_) => _configuration.showSelectionDialog, (_) {
+      if (_configuration.showSelectionDialog) {
+        showDialog(
+          context: context,
+          builder: (context) =>
+              _buildMapSelectionDialog(_configuration.availableMaps),
+        );
+      }
+    }));
   }
 
   Widget _buildMapSelectionDialog(List<AvailableMap> maps) =>
