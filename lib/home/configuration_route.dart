@@ -238,13 +238,17 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
           ElevatedButton.icon(
             onPressed: _configuration.locationInputValid
                 ? () => showDialog(
-                    context: context,
-                    builder: (context) => SaveRouteDialog(
-                          selectedMode: _configuration.locationMode,
-                          length: _configuration.length,
-                          points: _configuration.points,
-                          seed: _configuration.seed,
-                        ))
+                      context: context,
+                      builder: (context) => SaveRouteDialog(
+                        selectedMode: _configuration.locationMode,
+                        length: _configuration.length,
+                        points: _configuration.points,
+                        seed: _configuration.seed,
+                        routeConfirmed: (routeName) {
+                          print(routeName);
+                        },
+                      ),
+                    )
                 : null,
             icon: Icon(Icons.favorite_border),
             label: Text("add route to favourite"),

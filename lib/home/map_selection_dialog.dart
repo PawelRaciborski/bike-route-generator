@@ -10,8 +10,6 @@ class MapSelectionDialog extends StatefulWidget {
   final List<AvailableMap> maps;
   final Configuration configuration;
 
-
-
   const MapSelectionDialog({
     Key? key,
     required this.maps,
