@@ -43,7 +43,7 @@ abstract class _Configuration with Store {
   int seed = 431;
 
   @observable
-  List<AvailableMap> availableMaps = [];
+  ObservableList<AvailableMap> availableMaps = ObservableList.of([]);
 
   @observable
   bool showSelectionDialog = false;
@@ -86,7 +86,8 @@ abstract class _Configuration with Store {
         launchURL(generateGoogleMapsUrl(value));
       };
     } else {
-      availableMaps = await MapLauncher.installedMaps;
+      var list = await MapLauncher.installedMaps;
+      availableMaps = ObservableList.of(list);
 
       final MapType? preselectedMap = mapType ??
           await _prefs.then((prefs) {
