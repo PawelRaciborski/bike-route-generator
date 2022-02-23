@@ -1,6 +1,7 @@
 import 'package:bike_route_generator/credits/credits_route.dart';
 import 'package:bike_route_generator/favs/favs_route.dart';
 import 'package:bike_route_generator/favs/model/fav_repo.dart';
+import 'package:bike_route_generator/favs/save_route_dialog.dart';
 import 'package:bike_route_generator/home/map_selection_dialog.dart';
 import 'package:bike_route_generator/main.dart';
 import 'package:bike_route_generator/ui/OrientationAwareBuilder.dart';
@@ -62,17 +63,16 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
               ),
             ),
           ),
-          floatingActionButton:
-              _configuration.locationInputValid
-                  ? FloatingActionButton(
-                      onPressed: _confirmButtonOnPressed,
-                      child: Icon(
-                        !_configuration.isProcessing
-                            ? Icons.directions_bike
-                            : Icons.hourglass_bottom,
-                      ),
-                    )
-                  : null,
+          floatingActionButton: _configuration.locationInputValid
+              ? FloatingActionButton(
+                  onPressed: _confirmButtonOnPressed,
+                  child: Icon(
+                    !_configuration.isProcessing
+                        ? Icons.directions_bike
+                        : Icons.hourglass_bottom,
+                  ),
+                )
+              : null,
         ),
       );
 
@@ -108,11 +108,12 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
     );
   }
 
-  Function()? get _confirmButtonOnPressed => _configuration.locationInputValid && !_configuration.isProcessing
-      ? () {
-          _configuration.navigate();
-        }
-      : null;
+  Function()? get _confirmButtonOnPressed =>
+      _configuration.locationInputValid && !_configuration.isProcessing
+          ? () {
+              _configuration.navigate();
+            }
+          : null;
 
   @override
   void didChangeDependencies() {
@@ -236,18 +237,14 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
           ),
           ElevatedButton.icon(
             onPressed: _configuration.locationInputValid
-                ? () async {
-                    // final originLocation = await _originLocation;
-                    // final repo = await injector.getAsync<FavRouteRepository>();
-                    //
-                    // repo.insertLocation(
-                    //   FavRoute(
-                    //       name: "Route ${DateTime.now()}",
-                    //       latitude: originLocation.latitude,
-                    //       longitude: originLocation.longitude,
-                    //       seed: _configuration.seed),
-                    // );
-                  }
+                ? () => showDialog(
+                    context: context,
+                    builder: (context) => SaveRouteDialog(
+                          selectedMode: _configuration.locationMode,
+                          length: _configuration.length,
+                          points: _configuration.points,
+                          seed: _configuration.seed,
+                        ))
                 : null,
             icon: Icon(Icons.favorite_border),
             label: Text("add route to favourite"),

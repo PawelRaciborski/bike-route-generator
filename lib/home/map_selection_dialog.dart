@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:map_launcher/map_launcher.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'configuration_store.dart';
 
@@ -24,7 +23,6 @@ class MapSelectionDialog extends StatefulWidget {
 }
 
 class _MapSelectionDialogState extends State<MapSelectionDialog> {
-  // Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
   bool _rememberSelection = true;
 
   @override
