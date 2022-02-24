@@ -245,7 +245,7 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
                         points: _configuration.points,
                         seed: _configuration.seed,
                         routeConfirmed: (routeName) {
-                          print(routeName);
+                          _configuration.saveRoute(routeName);
                         },
                       ),
                     )

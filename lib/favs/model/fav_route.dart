@@ -12,7 +12,10 @@ class FavRoute {
   final int seed;
 
   final double latitude;
+
   final double longitude;
+
+  final int points;
 
   FavRoute({
     this.id,
@@ -20,14 +23,15 @@ class FavRoute {
     required this.seed,
     required this.latitude,
     required this.longitude,
+    required this.points,
   });
 
-  Map<String, dynamic> toJson() =>
-      {
+  Map<String, dynamic> toJson() => {
         'name': name,
         'seed': seed,
         'latitude': latitude,
-        'longitude': longitude
+        'longitude': longitude,
+        'points': points
       };
 
   FavRoute.fromJson(Map<String, dynamic> json)
@@ -35,6 +39,7 @@ class FavRoute {
         latitude = json['latitude'],
         longitude = json['longitude'],
         seed = json['seed'],
+        points = json['points'],
         id = null;
 }
 

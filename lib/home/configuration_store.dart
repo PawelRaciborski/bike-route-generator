@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import 'package:bike_route_generator/favs/model/fav_repo.dart';
+import 'package:bike_route_generator/favs/model/fav_route.dart';
 import 'package:bike_route_generator/ors/ors_api.dart';
 import 'package:bike_route_generator/ors/url_launching.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -17,10 +19,11 @@ class Configuration = _Configuration with _$Configuration;
 abstract class _Configuration with Store {
   final OrsApi _orsApi;
   final Future<SharedPreferences> _prefs;
+  final Future<FavRouteRepository> _favRouteRepository;
 
   final random = Random();
 
-  _Configuration(this._orsApi, this._prefs);
+  _Configuration(this._orsApi, this._prefs, this._favRouteRepository);
 
   @observable
   double? latitude;
@@ -115,6 +118,22 @@ abstract class _Configuration with Store {
       isProcessing = false;
       showSelectionDialog = true;
     }
+  }
+
+  @action
+  Future saveRoute(String name) async {
+    final repo = await _favRouteRepository;
+    final origin = await _originLocation;
+
+    repo.insertLocation(
+      FavRoute(
+        name: name,
+        seed: seed,
+        latitude: origin.latitude,
+        longitude: origin.longitude,
+        points: points,
+      ),
+    );
   }
 
   void selectMap(AvailableMap selectedMap, bool rememberSelection) {

@@ -19,6 +19,7 @@ Future<void> main() async {
     ..registerFactory<Configuration>(() => Configuration(
           injector.get(),
           injector.getAsync(),
+          injector.getAsync(),
         ));
   runApp(RouteGeneratorApp());
 }
