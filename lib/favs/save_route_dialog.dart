@@ -35,34 +35,43 @@ class _SaveRouteDialogState extends State<SaveRouteDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-      title: Text("Do you want to save this route?"),
-      content: Container(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildDetails(),
-            Padding(
-              padding: const EdgeInsets.only(top: 8.0),
-              child: TextField(
-                controller: _textController,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: "Route name",
+        title: Text("Do you want to save this route?"),
+        content: Container(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildDetails(),
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: TextField(
+                  controller: _textController,
+                  onChanged: (text) {
+                    setState(() {
+                      //no-op
+                    });
+                  },
+                  decoration: InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: "Route name",
+                      errorText: _textController.text.isEmpty
+                          ? "Please set name!"
+                          : null),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-      actions: [
-        TextButton(
-            onPressed: () {
-              widget.routeConfirmed(_textController.text);
-              Navigator.pop(context);
-            },
-            child: const Text("Save")),
-      ],
-    );
+        actions: [
+          TextButton(
+              onPressed: _textController.text.isNotEmpty
+                  ? () {
+                      widget.routeConfirmed(_textController.text);
+                      Navigator.pop(context);
+                    }
+                  : null,
+              child: const Text("Save")),
+        ],
+      );
 
   Widget _buildDetails() {
     return Row(
@@ -72,10 +81,10 @@ class _SaveRouteDialogState extends State<SaveRouteDialog> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("Origin"),
-              Text("Length"),
-              Text("Seed"),
-              Text("Points"),
+              const Text("Origin"),
+              const Text("Length"),
+              const Text("Seed"),
+              const Text("Points"),
             ],
           ),
         ),
