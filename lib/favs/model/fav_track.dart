@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:floor/floor.dart';
 
 @entity
-class FavRoute {
+class FavTrack {
   @PrimaryKey(autoGenerate: true)
   final int? id;
 
@@ -17,7 +17,7 @@ class FavRoute {
 
   final int points;
 
-  FavRoute({
+  FavTrack({
     this.id,
     required this.name,
     required this.seed,
@@ -34,7 +34,7 @@ class FavRoute {
         'points': points
       };
 
-  FavRoute.fromJson(Map<String, dynamic> json)
+  FavTrack.fromJson(Map<String, dynamic> json)
       : name = json['name'],
         latitude = json['latitude'],
         longitude = json['longitude'],
@@ -44,10 +44,10 @@ class FavRoute {
 }
 
 @dao
-abstract class FavRouteDao {
-  @Query('SELECT * FROM FavRoute')
-  Future<List<FavRoute>> findAllRoutes();
+abstract class FavTrackDao {
+  @Query('SELECT * FROM FavTrack')
+  Future<List<FavTrack>> findAllTracks();
 
   @insert
-  Future<void> insertRoute(FavRoute route);
+  Future<void> insertTrack(FavTrack track);
 }

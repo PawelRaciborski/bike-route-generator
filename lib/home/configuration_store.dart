@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:bike_route_generator/favs/model/fav_repo.dart';
-import 'package:bike_route_generator/favs/model/fav_route.dart';
+import 'package:bike_route_generator/favs/model/fav_track.dart';
 import 'package:bike_route_generator/ors/ors_api.dart';
 import 'package:bike_route_generator/ors/url_launching.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -126,7 +126,7 @@ abstract class _Configuration with Store {
     final origin = await _originLocation;
 
     repo.insertLocation(
-      FavRoute(
+      FavTrack(
         name: name,
         seed: seed,
         latitude: origin.latitude,

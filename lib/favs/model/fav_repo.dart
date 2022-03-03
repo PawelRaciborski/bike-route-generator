@@ -1,10 +1,10 @@
 import 'package:bike_route_generator/favs/model/database.dart';
-import 'package:bike_route_generator/favs/model/fav_route.dart';
+import 'package:bike_route_generator/favs/model/fav_track.dart';
 
 class FavRouteRepository {
   final AppDatabase _favRouteDatabase;
 
-  FavRouteDao get _favRouteDao => _favRouteDatabase.favRouteDao;
+  FavTrackDao get _favRouteDao => _favRouteDatabase.favRouteDao;
 
   FavRouteRepository(this._favRouteDatabase);
 
@@ -15,8 +15,8 @@ class FavRouteRepository {
   }
 
   // Decouple DB model from logic model
-  Future<void> insertLocation(FavRoute favRoute) =>
-      _favRouteDao.insertRoute(favRoute);
+  Future<void> insertLocation(FavTrack favRoute) =>
+      _favRouteDao.insertTrack(favRoute);
 
-  Future<List<FavRoute>> getAll() => _favRouteDao.findAllRoutes();
+  Future<List<FavTrack>> getAll() => _favRouteDao.findAllTracks();
 }
