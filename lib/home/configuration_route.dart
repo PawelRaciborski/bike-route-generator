@@ -1,6 +1,7 @@
 import 'package:bike_route_generator/credits/credits_route.dart';
 import 'package:bike_route_generator/favs/favs_route.dart';
 import 'package:bike_route_generator/favs/model/fav_repo.dart';
+import 'package:bike_route_generator/favs/model/fav_track.dart';
 import 'package:bike_route_generator/favs/save_route_dialog.dart';
 import 'package:bike_route_generator/home/map_selection_dialog.dart';
 import 'package:bike_route_generator/main.dart';
@@ -33,11 +34,15 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
               IconButton(
                   onPressed: () async {
                     final repo = await injector.getAsync<FavRouteRepository>();
-                    Navigator.push(
+                    final FavTrack? result = await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => FavouriteRoute(repo),
                         ));
+
+                    if (result != null) {
+                      _configuration.loadTrack(result);
+                    }
                   },
                   icon: Icon(Icons.favorite)),
               IconButton(
@@ -91,22 +96,22 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
               ],
             ));
 
-  Widget _buildRouteOriginSection() {
-    return Column(
-      children: [
-        _buildOriginOptionSelector(),
-        AnimatedCrossFade(
-          duration: const Duration(milliseconds: 150),
-          firstChild: _buildCustomLocationInput(),
-          secondChild: Container(),
-          // Second child just to made coords input disappear
-          crossFadeState: _configuration.locationMode.asBool
-              ? CrossFadeState.showFirst
-              : CrossFadeState.showSecond,
+  Widget _buildRouteOriginSection() => Observer(
+        builder: (context) => Column(
+          children: [
+            _buildOriginOptionSelector(),
+            AnimatedCrossFade(
+              duration: const Duration(milliseconds: 150),
+              firstChild: _buildCustomLocationInput(),
+              secondChild: Container(),
+              // Second child just to made coords input disappear
+              crossFadeState: _configuration.locationMode.asBool
+                  ? CrossFadeState.showFirst
+                  : CrossFadeState.showSecond,
+            ),
+          ],
         ),
-      ],
-    );
-  }
+      );
 
   Function()? get _confirmButtonOnPressed =>
       _configuration.locationInputValid && !_configuration.isProcessing
@@ -159,33 +164,44 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
         ),
       );
 
-  Widget _buildCustomLocationInput() => Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(4.0),
-            child: RegExpTextField(
-              RegExp(r'^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?)$'),
-              keyboardType: TextInputType.number,
-              labelText: 'Latitude',
-              enabled: _configuration.locationMode.asBool,
-              onChange: (isValid, value) {
-                _configuration.latitude = isValid ? double.parse(value) : null;
-              },
+  Widget _buildCustomLocationInput() => Observer(
+        builder: (context) {
+          final longitude = _configuration.longitude?.toString();
+          final latitude = _configuration.latitude?.toString();
+          return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(4.0),
+              child: RegExpTextField(
+                RegExp(r'^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?)$'),
+                keyboardType: TextInputType.number,
+                labelText: 'Latitude',
+                enabled: _configuration.locationMode.asBool,
+                onChange: (isValid, value) {
+                  _configuration.latitude =
+                      isValid ? double.parse(value) : null;
+                },
+                text: latitude,
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(4.0),
-            child: RegExpTextField(
-              RegExp(r'^\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$'),
-              keyboardType: TextInputType.number,
-              labelText: 'Longitude',
-              enabled: _configuration.locationMode.asBool,
-              onChange: (isValid, value) {
-                _configuration.longitude = isValid ? double.parse(value) : null;
-              },
+            Padding(
+              padding: const EdgeInsets.all(4.0),
+              child: RegExpTextField(
+                RegExp(
+                    r'^\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$'),
+                keyboardType: TextInputType.number,
+                labelText: 'Longitude',
+                enabled: _configuration.locationMode.asBool,
+                onChange: (isValid, value) {
+                  _configuration.longitude =
+                      isValid ? double.parse(value) : null;
+                },
+                text: longitude,
+              ),
             ),
-          ),
-        ],
+          ],
+        );
+        },
       );
 
   Widget _buildRoundTripDetailsInput() {

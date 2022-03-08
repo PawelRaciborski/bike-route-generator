@@ -8,12 +8,15 @@ class RegExpTextField extends StatefulWidget {
   final bool enabled;
   final Function(bool, String)? onChange;
 
+  final String? text;
+
   const RegExpTextField(
     this.regExp, {
     this.labelText,
     this.keyboardType,
     this.enabled = true,
     this.onChange,
+    this.text,
     Key? key,
   }) : super(key: key);
 
@@ -37,7 +40,12 @@ class RegExpTextFieldState extends State<RegExpTextField> {
   }
 
   @override
-  Widget build(BuildContext context) => TextField(
+  Widget build(BuildContext context) {
+    var text = widget.text;
+    if (text != null) {
+      _textController.text = text;
+    }
+    return TextField(
         enabled: widget.enabled,
         controller: _textController,
         keyboardType: widget.keyboardType,
@@ -46,6 +54,7 @@ class RegExpTextFieldState extends State<RegExpTextField> {
             labelText: widget.labelText,
             errorText: _isValid ? null : "Wrong input!"),
       );
+  }
 
   bool _validateInput() => widget.regExp.hasMatch(_textController.text);
 

@@ -132,8 +132,19 @@ abstract class _Configuration with Store {
         latitude: origin.latitude,
         longitude: origin.longitude,
         points: points,
+        length: length
       ),
     );
+  }
+
+  @action
+  void loadTrack(FavTrack track) {
+    latitude = track.latitude;
+    longitude = track.longitude;
+    locationMode = RouteOriginLocation.custom;
+    seed = track.seed;
+    length = track.length;
+    points = track.points;
   }
 
   void selectMap(AvailableMap selectedMap, bool rememberSelection) {

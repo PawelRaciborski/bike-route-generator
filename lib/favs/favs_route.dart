@@ -14,13 +14,23 @@ class FavouriteRoute extends StatelessWidget {
       ),
       body: FutureBuilder<List<FavTrack>>(
         builder: (context, snapshot) {
-          final routesNames = snapshot.data?.map((e) => e.name) ?? ['No data'];
+          if(snapshot.data == null) {
+            return Text('No Data!');
+          }
+
+          final List<FavTrack> tracks = snapshot.data as List<FavTrack>;
 
           return ListView.builder(
             itemBuilder: (context, index) {
-              return Text(routesNames.elementAt(index));
+              var selectedElement = tracks.elementAt(index);
+              return ListTile(
+              title: Text(selectedElement.name),
+              onTap: () {
+                Navigator.pop(context, selectedElement);
+              },
+            );
             },
-            itemCount: routesNames.length,
+            itemCount: tracks.length,
           );
         },
         future: routeRepository.getAll(),

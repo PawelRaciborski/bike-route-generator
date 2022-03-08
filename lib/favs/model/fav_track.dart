@@ -17,6 +17,8 @@ class FavTrack {
 
   final int points;
 
+  final int length;
+
   FavTrack({
     this.id,
     required this.name,
@@ -24,6 +26,7 @@ class FavTrack {
     required this.latitude,
     required this.longitude,
     required this.points,
+    required this.length,
   });
 
   Map<String, dynamic> toJson() => {
@@ -31,7 +34,8 @@ class FavTrack {
         'seed': seed,
         'latitude': latitude,
         'longitude': longitude,
-        'points': points
+        'points': points,
+        'length': length,
       };
 
   FavTrack.fromJson(Map<String, dynamic> json)
@@ -40,6 +44,7 @@ class FavTrack {
         longitude = json['longitude'],
         seed = json['seed'],
         points = json['points'],
+        length = json['length'],
         id = null;
 }
 
