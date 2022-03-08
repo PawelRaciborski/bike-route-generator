@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import 'package:bike_route_generator/favs/model/fav_repo.dart';
+import 'package:bike_route_generator/favs/model/fav_track.dart';
 import 'package:bike_route_generator/ors/ors_api.dart';
 import 'package:bike_route_generator/ors/url_launching.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -17,10 +19,11 @@ class Configuration = _Configuration with _$Configuration;
 abstract class _Configuration with Store {
   final OrsApi _orsApi;
   final Future<SharedPreferences> _prefs;
+  final Future<FavRouteRepository> _favRouteRepository;
 
   final random = Random();
 
-  _Configuration(this._orsApi, this._prefs);
+  _Configuration(this._orsApi, this._prefs, this._favRouteRepository);
 
   @observable
   double? latitude;
@@ -43,7 +46,7 @@ abstract class _Configuration with Store {
   int seed = 431;
 
   @observable
-  List<AvailableMap> availableMaps = [];
+  ObservableList<AvailableMap> availableMaps = ObservableList.of([]);
 
   @observable
   bool showSelectionDialog = false;
@@ -86,7 +89,8 @@ abstract class _Configuration with Store {
         launchURL(generateGoogleMapsUrl(value));
       };
     } else {
-      availableMaps = await MapLauncher.installedMaps;
+      var list = await MapLauncher.installedMaps;
+      availableMaps = ObservableList.of(list);
 
       final MapType? preselectedMap = mapType ??
           await _prefs.then((prefs) {
@@ -114,6 +118,33 @@ abstract class _Configuration with Store {
       isProcessing = false;
       showSelectionDialog = true;
     }
+  }
+
+  @action
+  Future saveRoute(String name) async {
+    final repo = await _favRouteRepository;
+    final origin = await _originLocation;
+
+    repo.insertLocation(
+      FavTrack(
+        name: name,
+        seed: seed,
+        latitude: origin.latitude,
+        longitude: origin.longitude,
+        points: points,
+        length: length
+      ),
+    );
+  }
+
+  @action
+  void loadTrack(FavTrack track) {
+    latitude = track.latitude;
+    longitude = track.longitude;
+    locationMode = RouteOriginLocation.custom;
+    seed = track.seed;
+    length = track.length;
+    points = track.points;
   }
 
   void selectMap(AvailableMap selectedMap, bool rememberSelection) {

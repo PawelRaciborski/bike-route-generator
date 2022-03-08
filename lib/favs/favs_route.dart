@@ -1,5 +1,5 @@
 import 'package:bike_route_generator/favs/model/fav_repo.dart';
-import 'package:bike_route_generator/favs/model/fav_route.dart';
+import 'package:bike_route_generator/favs/model/fav_track.dart';
 import 'package:flutter/material.dart';
 
 class FavouriteRoute extends StatelessWidget {
@@ -12,15 +12,25 @@ class FavouriteRoute extends StatelessWidget {
       appBar: AppBar(
         title: Text("Favourite routs"),
       ),
-      body: FutureBuilder<List<FavRoute>>(
+      body: FutureBuilder<List<FavTrack>>(
         builder: (context, snapshot) {
-          final routesNames = snapshot.data?.map((e) => e.name) ?? ['No data'];
+          if(snapshot.data == null) {
+            return Text('No Data!');
+          }
+
+          final List<FavTrack> tracks = snapshot.data as List<FavTrack>;
 
           return ListView.builder(
             itemBuilder: (context, index) {
-              return Text(routesNames.elementAt(index));
+              var selectedElement = tracks.elementAt(index);
+              return ListTile(
+              title: Text(selectedElement.name),
+              onTap: () {
+                Navigator.pop(context, selectedElement);
+              },
+            );
             },
-            itemCount: routesNames.length,
+            itemCount: tracks.length,
           );
         },
         future: routeRepository.getAll(),

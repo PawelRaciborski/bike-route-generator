@@ -1,13 +1,14 @@
 import 'package:bike_route_generator/credits/credits_route.dart';
 import 'package:bike_route_generator/favs/favs_route.dart';
 import 'package:bike_route_generator/favs/model/fav_repo.dart';
+import 'package:bike_route_generator/favs/model/fav_track.dart';
+import 'package:bike_route_generator/favs/save_route_dialog.dart';
 import 'package:bike_route_generator/home/map_selection_dialog.dart';
 import 'package:bike_route_generator/main.dart';
 import 'package:bike_route_generator/ui/OrientationAwareBuilder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:flutter_spinbox/material.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:map_launcher/map_launcher.dart';
 import 'package:mobx/mobx.dart';
 
@@ -33,11 +34,15 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
               IconButton(
                   onPressed: () async {
                     final repo = await injector.getAsync<FavRouteRepository>();
-                    Navigator.push(
+                    final FavTrack? result = await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => FavouriteRoute(repo),
                         ));
+
+                    if (result != null) {
+                      _configuration.loadTrack(result);
+                    }
                   },
                   icon: Icon(Icons.favorite)),
               IconButton(
@@ -63,17 +68,16 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
               ),
             ),
           ),
-          floatingActionButton:
-              _configuration.locationInputValid
-                  ? FloatingActionButton(
-                      onPressed: _confirmButtonOnPressed,
-                      child: Icon(
-                        !_configuration.isProcessing
-                            ? Icons.directions_bike
-                            : Icons.hourglass_bottom,
-                      ),
-                    )
-                  : null,
+          floatingActionButton: _configuration.locationInputValid
+              ? FloatingActionButton(
+                  onPressed: _confirmButtonOnPressed,
+                  child: Icon(
+                    !_configuration.isProcessing
+                        ? Icons.directions_bike
+                        : Icons.hourglass_bottom,
+                  ),
+                )
+              : null,
         ),
       );
 
@@ -92,28 +96,29 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
               ],
             ));
 
-  Widget _buildRouteOriginSection() {
-    return Column(
-      children: [
-        _buildOriginOptionSelector(),
-        AnimatedCrossFade(
-          duration: const Duration(milliseconds: 150),
-          firstChild: _buildCustomLocationInput(),
-          secondChild: Container(),
-          // Second child just to made coords input disappear
-          crossFadeState: _configuration.locationMode.asBool
-              ? CrossFadeState.showFirst
-              : CrossFadeState.showSecond,
+  Widget _buildRouteOriginSection() => Observer(
+        builder: (context) => Column(
+          children: [
+            _buildOriginOptionSelector(),
+            AnimatedCrossFade(
+              duration: const Duration(milliseconds: 150),
+              firstChild: _buildCustomLocationInput(),
+              secondChild: Container(),
+              // Second child just to made coords input disappear
+              crossFadeState: _configuration.locationMode.asBool
+                  ? CrossFadeState.showFirst
+                  : CrossFadeState.showSecond,
+            ),
+          ],
         ),
-      ],
-    );
-  }
+      );
 
-  Function()? get _confirmButtonOnPressed => _configuration.locationInputValid && !_configuration.isProcessing
-      ? () {
-          _configuration.navigate();
-        }
-      : null;
+  Function()? get _confirmButtonOnPressed =>
+      _configuration.locationInputValid && !_configuration.isProcessing
+          ? () {
+              _configuration.navigate();
+            }
+          : null;
 
   @override
   void didChangeDependencies() {
@@ -159,33 +164,44 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
         ),
       );
 
-  Widget _buildCustomLocationInput() => Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(4.0),
-            child: RegExpTextField(
-              RegExp(r'^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?)$'),
-              keyboardType: TextInputType.number,
-              labelText: 'Latitude',
-              enabled: _configuration.locationMode.asBool,
-              onChange: (isValid, value) {
-                _configuration.latitude = isValid ? double.parse(value) : null;
-              },
+  Widget _buildCustomLocationInput() => Observer(
+        builder: (context) {
+          final longitude = _configuration.longitude?.toString();
+          final latitude = _configuration.latitude?.toString();
+          return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(4.0),
+              child: RegExpTextField(
+                RegExp(r'^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?)$'),
+                keyboardType: TextInputType.number,
+                labelText: 'Latitude',
+                enabled: _configuration.locationMode.asBool,
+                onChange: (isValid, value) {
+                  _configuration.latitude =
+                      isValid ? double.parse(value) : null;
+                },
+                text: latitude,
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(4.0),
-            child: RegExpTextField(
-              RegExp(r'^\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$'),
-              keyboardType: TextInputType.number,
-              labelText: 'Longitude',
-              enabled: _configuration.locationMode.asBool,
-              onChange: (isValid, value) {
-                _configuration.longitude = isValid ? double.parse(value) : null;
-              },
+            Padding(
+              padding: const EdgeInsets.all(4.0),
+              child: RegExpTextField(
+                RegExp(
+                    r'^\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$'),
+                keyboardType: TextInputType.number,
+                labelText: 'Longitude',
+                enabled: _configuration.locationMode.asBool,
+                onChange: (isValid, value) {
+                  _configuration.longitude =
+                      isValid ? double.parse(value) : null;
+                },
+                text: longitude,
+              ),
             ),
-          ),
-        ],
+          ],
+        );
+        },
       );
 
   Widget _buildRoundTripDetailsInput() {
@@ -237,18 +253,18 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
           ),
           ElevatedButton.icon(
             onPressed: _configuration.locationInputValid
-                ? () async {
-                    // final originLocation = await _originLocation;
-                    // final repo = await injector.getAsync<FavRouteRepository>();
-                    //
-                    // repo.insertLocation(
-                    //   FavRoute(
-                    //       name: "Route ${DateTime.now()}",
-                    //       latitude: originLocation.latitude,
-                    //       longitude: originLocation.longitude,
-                    //       seed: _configuration.seed),
-                    // );
-                  }
+                ? () => showDialog(
+                      context: context,
+                      builder: (context) => SaveRouteDialog(
+                        selectedMode: _configuration.locationMode,
+                        length: _configuration.length,
+                        points: _configuration.points,
+                        seed: _configuration.seed,
+                        routeConfirmed: (routeName) {
+                          _configuration.saveRoute(routeName);
+                        },
+                      ),
+                    )
                 : null,
             icon: Icon(Icons.favorite_border),
             label: Text("add route to favourite"),
@@ -256,31 +272,6 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
         ],
       ),
     );
-  }
-
-  Future<Position> _determinePosition() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      return Future.error('Location services are disabled.');
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        return Future.error('Location permissions are denied');
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      return Future.error(
-          'Location permissions are permanently denied, we cannot request permissions.');
-    }
-
-    return await Geolocator.getCurrentPosition();
   }
 
   @override
