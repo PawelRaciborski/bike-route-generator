@@ -26,10 +26,29 @@ abstract class _Configuration with Store {
   _Configuration(this._orsApi, this._prefs, this._favRouteRepository);
 
   @observable
-  double? latitude;
+  double? _latitude;
 
   @observable
-  double? longitude;
+  double? _longitude;
+
+  double? get latitude => _latitude;
+  double? get longitude => _longitude;
+
+  set latitude(double? value) {
+    prePopulatedLatitude = false;
+    _latitude = value;
+  }
+
+  set longitude(double? value) {
+    prePopulatedLongitude = false;
+    _longitude = value;
+  }
+
+  @observable
+  bool prePopulatedLatitude = false;
+
+  @observable
+  bool prePopulatedLongitude = false;
 
   @observable
   RouteOriginLocation locationMode = RouteOriginLocation.current;
@@ -139,8 +158,10 @@ abstract class _Configuration with Store {
 
   @action
   void loadTrack(FavTrack track) {
-    latitude = track.latitude;
-    longitude = track.longitude;
+    prePopulatedLatitude = true;
+    prePopulatedLongitude = true;
+    _latitude = track.latitude;
+    _longitude = track.longitude;
     locationMode = RouteOriginLocation.custom;
     seed = track.seed;
     length = track.length;

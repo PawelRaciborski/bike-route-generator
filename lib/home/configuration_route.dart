@@ -13,7 +13,6 @@ import 'package:map_launcher/map_launcher.dart';
 import 'package:mobx/mobx.dart';
 
 import 'configuration_store.dart';
-import 'reg_exp_text_field.dart';
 
 class ConfigurationRoute extends StatefulWidget {
   @override
@@ -96,11 +95,11 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
               ],
             ));
 
-  Widget _buildRouteOriginSection() => Observer(
-        builder: (context) => Column(
-          children: [
-            _buildOriginOptionSelector(),
-            AnimatedCrossFade(
+  Widget _buildRouteOriginSection() => Column(
+        children: [
+          _buildOriginOptionSelector(),
+          Observer(
+            builder: (_) => AnimatedCrossFade(
               duration: const Duration(milliseconds: 150),
               firstChild: _buildCustomLocationInput(),
               secondChild: Container(),
@@ -109,8 +108,8 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
                   ? CrossFadeState.showFirst
                   : CrossFadeState.showSecond,
             ),
-          ],
-        ),
+          ),
+        ],
       );
 
   Function()? get _confirmButtonOnPressed =>
@@ -164,115 +163,117 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
         ),
       );
 
-  Widget _buildCustomLocationInput() => Observer(
-        builder: (context) {
-          final longitude = _configuration.longitude?.toString();
-          final latitude = _configuration.latitude?.toString();
-          return Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(4.0),
-              child: RegExpTextField(
-                RegExp(r'^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?)$'),
-                keyboardType: TextInputType.number,
-                labelText: 'Latitude',
-                enabled: _configuration.locationMode.asBool,
-                onChange: (isValid, value) {
-                  _configuration.latitude =
-                      isValid ? double.parse(value) : null;
-                },
-                text: latitude,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(4.0),
-              child: RegExpTextField(
-                RegExp(
-                    r'^\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$'),
-                keyboardType: TextInputType.number,
-                labelText: 'Longitude',
-                enabled: _configuration.locationMode.asBool,
-                onChange: (isValid, value) {
-                  _configuration.longitude =
-                      isValid ? double.parse(value) : null;
-                },
-                text: longitude,
-              ),
-            ),
-          ],
-        );
-        },
-      );
-
-  Widget _buildRoundTripDetailsInput() {
-    return Observer(
-      builder: (_) => Column(
-        children: [
-          Text('Roundtrip config'),
-          SpinBox(
-            min: 1,
-            max: 1000,
-            value: _configuration.length.toDouble(),
-            decoration: InputDecoration(labelText: "Distance [km]"),
-            onChanged: (value) => _configuration.length = value.toInt(),
-          ),
-          Row(
-            mainAxisSize: MainAxisSize.max,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                flex: 6,
-                child: SpinBox(
-                  min: 1,
-                  max: 1023,
-                  value: _configuration.seed.toDouble(),
-                  decoration: InputDecoration(labelText: "Seed"),
-                  onChanged: (value) => _configuration.seed = value.toInt(),
-                ),
-              ),
-              Expanded(
-                flex: 1,
-                child: IconButton(
-                  icon: Icon(
-                    Icons.casino_outlined,
-                    color: Theme.of(context).colorScheme.secondary,
-                  ),
-                  onPressed: () {
-                    _configuration.refreshSeed();
-                  },
-                ),
-              )
-            ],
-          ),
-          SpinBox(
-            min: 3,
-            max: 10,
-            value: _configuration.points.toDouble(),
-            decoration: InputDecoration(labelText: "Points"),
-            onChanged: (value) => _configuration.points = value.toInt(),
-          ),
-          ElevatedButton.icon(
-            onPressed: _configuration.locationInputValid
-                ? () => showDialog(
-                      context: context,
-                      builder: (context) => SaveRouteDialog(
-                        selectedMode: _configuration.locationMode,
-                        length: _configuration.length,
-                        points: _configuration.points,
-                        seed: _configuration.seed,
-                        routeConfirmed: (routeName) {
-                          _configuration.saveRoute(routeName);
-                        },
-                      ),
-                    )
-                : null,
-            icon: Icon(Icons.favorite_border),
-            label: Text("add route to favourite"),
-          )
-        ],
+  Widget _buildCoordTextFromField(
+    bool prePopulated,
+    double? value,
+    String label,
+    Function(double?) onChanged,
+  ) {
+    return TextFormField(
+      // key: Key(_configuration.prePopulatedLocation ? _configuration.latitude?.toString()??"" : "Latitude"), // <- Magic!
+      //   initialValue: _configuration.latitude?.toString(),
+      controller: prePopulated
+          ? (TextEditingController()..text = value?.toString() ?? "")
+          : null,
+      decoration: InputDecoration(
+        labelText: label,
       ),
+      onChanged: (value) => onChanged(double.tryParse(value)),
     );
   }
+
+  Widget _buildCustomLocationInput() => Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(4.0),
+            //   RegExp(r'^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?)$'),
+            child: _buildCoordTextFromField(
+              _configuration.prePopulatedLatitude,
+              _configuration.latitude,
+              "Latitude",
+              (value) => _configuration.latitude = value,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(4.0),
+            //RegExp(r'^\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$'),
+            child: _buildCoordTextFromField(
+              _configuration.prePopulatedLongitude,
+              _configuration.longitude,
+              "Longitude",
+              (value) => _configuration.longitude = value,
+            ),
+          ),
+        ],
+      );
+
+  Widget _buildRoundTripDetailsInput() => Observer(
+        builder: (_) => Column(
+          children: [
+            Text('Roundtrip config'),
+            SpinBox(
+              min: 1,
+              max: 1000,
+              value: _configuration.length.toDouble(),
+              decoration: InputDecoration(labelText: "Distance [km]"),
+              onChanged: (value) => _configuration.length = value.toInt(),
+            ),
+            Row(
+              mainAxisSize: MainAxisSize.max,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  flex: 6,
+                  child: SpinBox(
+                    min: 1,
+                    max: 1023,
+                    value: _configuration.seed.toDouble(),
+                    decoration: InputDecoration(labelText: "Seed"),
+                    onChanged: (value) => _configuration.seed = value.toInt(),
+                  ),
+                ),
+                Expanded(
+                  flex: 1,
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.casino_outlined,
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+                    onPressed: () {
+                      _configuration.refreshSeed();
+                    },
+                  ),
+                )
+              ],
+            ),
+            SpinBox(
+              min: 3,
+              max: 10,
+              value: _configuration.points.toDouble(),
+              decoration: InputDecoration(labelText: "Points"),
+              onChanged: (value) => _configuration.points = value.toInt(),
+            ),
+            ElevatedButton.icon(
+              onPressed: _configuration.locationInputValid
+                  ? () => showDialog(
+                        context: context,
+                        builder: (context) => SaveRouteDialog(
+                          selectedMode: _configuration.locationMode,
+                          length: _configuration.length,
+                          points: _configuration.points,
+                          seed: _configuration.seed,
+                          routeConfirmed: (routeName) {
+                            _configuration.saveRoute(routeName);
+                          },
+                        ),
+                      )
+                  : null,
+              icon: Icon(Icons.favorite_border),
+              label: Text("add route to favourite"),
+            )
+          ],
+        ),
+      );
 
   @override
   void dispose() {
