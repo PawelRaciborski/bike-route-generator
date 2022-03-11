@@ -23,7 +23,11 @@ abstract class _Configuration with Store {
 
   final random = Random();
 
-  _Configuration(this._orsApi, this._prefs, this._favRouteRepository);
+  _Configuration(
+    this._orsApi,
+    this._prefs,
+    this._favRouteRepository,
+  );
 
   @observable
   double? _latitude;
@@ -31,17 +35,29 @@ abstract class _Configuration with Store {
   @observable
   double? _longitude;
 
-  double? get latitude => _latitude;
-  double? get longitude => _longitude;
+  String get latitude => _latitude.toString();
 
-  set latitude(double? value) {
-    prePopulatedLatitude = false;
-    _latitude = value;
+  String get longitude => _longitude.toString();
+
+  set latitude(String value) {
+    if (RegExp(r'^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?)$').hasMatch(value)) {
+      prePopulatedLatitude = false;
+      latitudeError = false;
+      _latitude = double.parse(value);
+    } else {
+      latitudeError = true;
+    }
   }
 
-  set longitude(double? value) {
-    prePopulatedLongitude = false;
-    _longitude = value;
+  set longitude(String value) {
+    if (RegExp(r'^\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$')
+        .hasMatch(value)) {
+      prePopulatedLongitude = false;
+      longitudeError = false;
+      _longitude = double.parse(value);
+    } else {
+      longitudeError = true;
+    }
   }
 
   @observable
@@ -49,6 +65,12 @@ abstract class _Configuration with Store {
 
   @observable
   bool prePopulatedLongitude = false;
+
+  @observable
+  bool latitudeError = false;
+
+  @observable
+  bool longitudeError = false;
 
   @observable
   RouteOriginLocation locationMode = RouteOriginLocation.current;
@@ -88,7 +110,7 @@ abstract class _Configuration with Store {
       return await _determinePosition()
           .then((value) => Coords(value.latitude, value.longitude));
     } else {
-      return Coords(latitude!, longitude!);
+      return Coords(_latitude!, _longitude!);
     }
   }
 
@@ -146,13 +168,12 @@ abstract class _Configuration with Store {
 
     repo.insertLocation(
       FavTrack(
-        name: name,
-        seed: seed,
-        latitude: origin.latitude,
-        longitude: origin.longitude,
-        points: points,
-        length: length
-      ),
+          name: name,
+          seed: seed,
+          latitude: origin.latitude,
+          longitude: origin.longitude,
+          points: points,
+          length: length),
     );
   }
 
@@ -160,6 +181,8 @@ abstract class _Configuration with Store {
   void loadTrack(FavTrack track) {
     prePopulatedLatitude = true;
     prePopulatedLongitude = true;
+    latitudeError = false;
+    longitudeError = false;
     _latitude = track.latitude;
     _longitude = track.longitude;
     locationMode = RouteOriginLocation.custom;

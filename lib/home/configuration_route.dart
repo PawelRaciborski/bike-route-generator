@@ -165,20 +165,23 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
 
   Widget _buildCoordTextFromField(
     bool prePopulated,
-    double? value,
+    String value,
     String label,
-    Function(double?) onChanged,
+    bool error,
+    Function(String) onChanged,
   ) {
     return TextFormField(
       // key: Key(_configuration.prePopulatedLocation ? _configuration.latitude?.toString()??"" : "Latitude"), // <- Magic!
       //   initialValue: _configuration.latitude?.toString(),
       controller: prePopulated
-          ? (TextEditingController()..text = value?.toString() ?? "")
+          ? (TextEditingController()..text = value)
           : null,
       decoration: InputDecoration(
         labelText: label,
+        errorText: error? "Wrong value!":null,
       ),
-      onChanged: (value) => onChanged(double.tryParse(value)),
+      keyboardType: TextInputType.number,
+      onChanged: (value) => onChanged(value),
     );
   }
 
@@ -191,16 +194,18 @@ class _ConfigurationRouteState extends State<ConfigurationRoute> {
               _configuration.prePopulatedLatitude,
               _configuration.latitude,
               "Latitude",
+              _configuration.latitudeError,
               (value) => _configuration.latitude = value,
             ),
           ),
           Padding(
             padding: const EdgeInsets.all(4.0),
-            //RegExp(r'^\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$'),
+
             child: _buildCoordTextFromField(
               _configuration.prePopulatedLongitude,
               _configuration.longitude,
               "Longitude",
+              _configuration.longitudeError,
               (value) => _configuration.longitude = value,
             ),
           ),
