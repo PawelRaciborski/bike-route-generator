@@ -46,14 +46,19 @@ class RegExpTextFieldState extends State<RegExpTextField> {
       _textController.text = text;
     }
     return TextField(
-        enabled: widget.enabled,
-        controller: _textController,
-        keyboardType: widget.keyboardType,
-        decoration: InputDecoration(
-            border: OutlineInputBorder(),
-            labelText: widget.labelText,
-            errorText: _isValid ? null : "Wrong input!"),
-      );
+      enabled: widget.enabled,
+      controller: _textController,
+      keyboardType: widget.keyboardType,
+      decoration: InputDecoration(
+        border: OutlineInputBorder(),
+        labelText: widget.labelText,
+        errorText: _isValid ? null : "Wrong input!",
+        suffixIcon: IconButton(
+          onPressed: _textController.clear,
+          icon: Icon(Icons.clear),
+        ),
+      ),
+    );
   }
 
   bool _validateInput() => widget.regExp.hasMatch(_textController.text);
